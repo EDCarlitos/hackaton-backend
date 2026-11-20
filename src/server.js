@@ -1,19 +1,17 @@
+const env = require('./config/env');
 const app = require('./app');
-const { migratePublic, seed } = require('./db/migrate');
-
-const PORT = process.env.PORT || 3000;
+const { setupDatabase } = require('./db/migrate');
 
 async function start() {
   try {
-    await migratePublic();
-    if (process.env.NODE_ENV !== 'production') await seed();
+    await setupDatabase({ withSeeds: env.nodeEnv !== 'production' });
   } catch (err) {
     console.error('Error preparando la base de datos:', err.message);
     process.exit(1);
   }
 
-  app.listen(PORT, () => {
-    console.log(`Servidor escuchando en http://localhost:${PORT}`);
+  app.listen(env.port, () => {
+    console.log(`Servidor escuchando en http://localhost:${env.port}`);
   });
 }
 
