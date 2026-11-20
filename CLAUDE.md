@@ -31,6 +31,8 @@ src/
 ├── shared/
 │   ├── middlewares/        # tenant, errorHandler, auth, validación
 │   └── utils/
+├── docs/
+│   └── openapi.js          # spec OpenAPI; se sirve en /docs (Swagger UI) y /docs.json
 ├── db/
 │   ├── migrate.js          # runner de migraciones y seeds
 │   ├── public/             # migraciones del schema public (instituciones, dominios, enums)
@@ -48,6 +50,7 @@ Reglas:
 - La dependencia va en un solo sentido: routes → controller → service → repository.
 - El SQL solo vive en los repositories. Los services nunca tocan `req` ni `res`.
 - Un módulo no importa el repository de otro módulo; si necesita algo, usa su service.
+- Al agregar o cambiar un endpoint, actualiza su contrato en `src/docs/openapi.js`.
 - Archivos con el formato `<modulo>.<capa>.js`. Nombres de módulo en plural y en minúsculas (`users`, `projects`).
 
 ## Multi-tenant: un schema por tenant

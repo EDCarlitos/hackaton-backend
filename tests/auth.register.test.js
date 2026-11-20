@@ -134,6 +134,71 @@ describe('POST /auth/register', () => {
       assert.ok(res.body.error.detalles.password);
     });
 
+    it('responde 400 si no hay body', async () => {
+      const res = await api().post('/auth/register');
+      assert.equal(res.status, 400);
+      assert.equal(res.body.error.codigo, 'VALIDACION');
+    });
+
+    it('rechaza tipos incorrectos (objetos/números en vez de strings)',async () => {
+      const res = await registrar({
+        correo: { $ne: null },
+        password: 12345678,
+        nombre_visible: ['x'],
+      });
+      assert.equal(res.status, 400);
+      assert.deepEqual(Object.keys(res.body.error.detalles).sort(), ['correo', 'nombre_visible', 'password']);
+    });
+
+    it('acepta exactamente 8 caracteres de contraseña y rechaza 7', async () => {
+      await registrar(datos(`p8_${unico()}@ucaribe.edu.mx`, { password: '12345678' })).expect(201);
+      const res = await registrar(datos(`p7_${unico()}@ucaribe.edu.mx`, { password: '1234567' }));
+      assert.equal(res.status, 400);
+      assert.ok(res.body.error.detalles.password);
+    });
+
+    it('rechaza nombre_visible vacío o de más de 100 caracteres y no crea el usuario', async () => {
+      for (const nombre_visible of ['   ', 'a'.repeat(101)]) {
+        const correo = `nom_${unico()}@ucaribe.edu.mx`;
+        const res = await registrar(datos(correo, { nombre_visible }));
+        assert.equal(res.status, 400);
+        assert.ok(res.body.error.detalles.nombre_visible);
+        assert.equal(await contarUsuarios('ucaribe', correo), 0);
+      }
+    });
+
+    it('guarda nombre_visible recortado y acepto_terminos_en NULL si no se envía', async () => {
+      const res = await registrar(datos(`trim_${unico()}@ucaribe.edu.mx`, { nombre_visible: '  Ana  ' }));
+      assert.equal(res.status, 201);
+      assert.equal(res.body.usuario.nombre_visible, 'Ana');
+      assert.equal(res.body.usuario.acepto_terminos_en, null);
+    });
+  });
+
+  describe('inyección SQL', () => {
+    it('un correo con SQL se rechaza en la validación y la tabla sigue intacta', async () => {
+      const antes = await pool.query('SELECT count(*)::int AS n FROM ucaribe.usuarios');
+
+      const res = await registrar(datos("x' OR '1'='1'; DROP TABLE usuarios; --@ucaribe.edu.mx"));
+
+      assert.equal(res.status, 400);
+      const despues = await pool.query('SELECT count(*)::int AS n FROM ucaribe.usuarios');
+      assert.equal(despues.rows[0].n, antes.rows[0].n);
+    });
+
+    it('nombre_visible con SQL se guarda literal (va parametrizado)', async () => {
+      const payload = "Robert'); DROP TABLE usuarios; --";
+      const correo = `bobby_${unico()}@ucaribe.edu.mx`;
+
+      const res = await registrar(datos(correo, { nombre_visible: payload }));
+
+      assert.equal(res.status, 201);
+      const { rows } = await pool.query('SELECT nombre_visible FROM ucaribe.usuarios WHERE correo = $1', [correo]);
+      assert.equal(rows[0].nombre_visible, payload);
+    });
+  });
+
+  describe('JSON', () => {
     it('responde 400 JSON_INVALIDO si el body no es JSON válido', async () => {
       const res = await api().post('/auth/register').set('Content-Type', 'application/json').send('{malo');
       assert.equal(res.status, 400);
