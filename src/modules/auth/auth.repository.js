@@ -17,4 +17,12 @@ async function findUsuarioById(db, id) {
   return rows[0] || null;
 }
 
-module.exports = { createUsuario, findUsuarioById };
+// Único lugar que lee password_hash. El service debe quitarlo antes de devolver el usuario.
+async function findUsuarioConPasswordPorCorreo(db, correo) {
+  const { rows } = await db.query(`SELECT ${COLUMNAS_PUBLICAS}, password_hash FROM usuarios WHERE correo = $1`, [
+    correo,
+  ]);
+  return rows[0] || null;
+}
+
+module.exports = { createUsuario, findUsuarioById, findUsuarioConPasswordPorCorreo };

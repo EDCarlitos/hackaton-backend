@@ -1,29 +1,42 @@
-const { verifyToken } = require('../utils/jwt');
-const { UnauthorizedError } = require('../errors');
-const instituciones = require('../../modules/instituciones/instituciones.service');
+const { UnauthorizedError, ForbiddenError } = require('../errors');
+const { ROLES } = require('../constants/roles');
+const auth = require('../../modules/auth/auth.service');
 
-// Exige "Authorization: Bearer <token>".
-// Deja req.auth = { usuarioId, rol } y req.tenant = { id, schema }.
-// El schema siempre se obtiene de public.instituciones, nunca del token ni del cliente.
+const ROLES_VALIDOS = new Set(Object.values(ROLES));
+
+// Autenticación: exige "Authorization: Bearer <token>".
+// Deja req.auth = { usuarioId, rol }, req.tenant = { id, schema } y req.usuario (perfil público).
+// El rol y el estado del usuario se leen de la BD en cada request, no del token.
 async function requireAuth(req, res, next) {
   const [scheme, token] = (req.headers.authorization || '').split(' ');
   if (scheme !== 'Bearer' || !token) {
     throw new UnauthorizedError('Token requerido', { code: 'TOKEN_REQUERIDO' });
   }
 
-  let payload;
-  try {
-    payload = verifyToken(token);
-  } catch {
-    throw new UnauthorizedError('Token inválido o expirado', { code: 'TOKEN_INVALIDO' });
-  }
+  const { usuario, tenant } = await auth.autenticar(token);
 
-  const institucion = await instituciones.findActivaPorId(payload.institucion_id);
-  if (!institucion) throw new UnauthorizedError('Institución no válida', { code: 'INSTITUCION_INVALIDA' });
-
-  req.auth = { usuarioId: Number(payload.sub), rol: payload.rol };
-  req.tenant = { id: institucion.id, schema: institucion.schema_nombre };
+  req.auth = { usuarioId: usuario.id, rol: usuario.rol };
+  req.tenant = tenant;
+  req.usuario = usuario;
   next();
 }
 
-module.exports = { requireAuth };
+// Autorización: se usa DESPUÉS de requireAuth. Ej: router.get('/x', requireAuth, requireRole(ROLES.ADMIN), ...)
+function requireRole(...roles) {
+  const invalidos = roles.filter((r) => !ROLES_VALIDOS.has(r));
+  if (!roles.length || invalidos.length) {
+    // Error de programación: falla al arrancar, no en el request.
+    throw new Error(`requireRole: roles inválidos: ${invalidos.join(', ') || '(ninguno)'}`);
+  }
+  const permitidos = new Set(roles);
+
+  return function verificarRol(req, res, next) {
+    if (!req.auth) throw new Error('requireRole se usó sin requireAuth antes');
+    if (!permitidos.has(req.auth.rol)) {
+      throw new ForbiddenError('No tienes permiso para esta acción', { code: 'ROL_INSUFICIENTE' });
+    }
+    next();
+  };
+}
+
+module.exports = { requireAuth, requireRole };

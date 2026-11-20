@@ -55,6 +55,34 @@ module.exports = {
         },
       },
     },
+    '/auth/login': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Iniciar sesión',
+        description:
+          'El dominio del correo decide en qué institución se busca al usuario. ' +
+          'Si falla el dominio, el correo o la contraseña, la respuesta es la misma (`CREDENCIALES_INVALIDAS`), ' +
+          'para no revelar qué correos existen. Solo con la contraseña correcta se informa si la cuenta está inactiva o sin verificar.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/LoginInput' },
+              example: { correo: 'ana@ucaribe.edu.mx', password: 'secreta123' },
+            },
+          },
+        },
+        responses: {
+          200: {
+            description: 'Sesión iniciada',
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/RegistroRespuesta' } } },
+          },
+          400: errorResponse('Datos inválidos o JSON mal formado', ['VALIDACION', 'JSON_INVALIDO']),
+          401: errorResponse('Correo o contraseña incorrectos', ['CREDENCIALES_INVALIDAS']),
+          403: errorResponse('Cuenta desactivada o correo sin verificar', ['USUARIO_INACTIVO', 'CORREO_NO_VERIFICADO']),
+        },
+      },
+    },
     '/auth/me': {
       get: {
         tags: ['Auth'],
@@ -141,6 +169,14 @@ module.exports = {
           acepto_terminos: { type: 'boolean', default: false },
         },
       },
+      LoginInput: {
+        type: 'object',
+        required: ['correo', 'password'],
+        properties: {
+          correo: { type: 'string', format: 'email' },
+          password: { type: 'string', format: 'password' },
+        },
+      },
       RegistroRespuesta: {
         type: 'object',
         properties: {
@@ -154,7 +190,7 @@ module.exports = {
           id: { type: 'integer', example: 1 },
           correo: { type: 'string', example: 'ana@ucaribe.edu.mx' },
           nombre_visible: { type: 'string', example: 'Ana López' },
-          rol: { type: 'string', example: 'usuario' },
+          rol: { type: 'string', enum: ['usuario', 'admin'], example: 'usuario' },
           correo_verificado_en: { type: 'string', format: 'date-time', nullable: true },
           acepto_terminos_en: { type: 'string', format: 'date-time', nullable: true },
           activo: { type: 'boolean', example: true },

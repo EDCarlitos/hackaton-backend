@@ -5,9 +5,14 @@ async function register(req, res) {
   res.status(201).json({ usuario, token });
 }
 
-async function me(req, res) {
-  const usuario = await service.obtenerPerfil({ usuarioId: req.auth.usuarioId, tenant: req.tenant });
-  res.json({ usuario });
+async function login(req, res) {
+  const { usuario, token } = await service.login(req.body);
+  res.json({ usuario, token });
 }
 
-module.exports = { register, me };
+// requireAuth ya cargó el usuario fresco de la BD.
+function me(req, res) {
+  res.json({ usuario: req.usuario });
+}
+
+module.exports = { register, login, me };

@@ -29,6 +29,7 @@ src/
 │   ├── env.js              # lee/valida variables de entorno
 │   └── db.js               # Pool de pg + helper withTenant
 ├── shared/
+│   ├── constants/          # roles
 │   ├── middlewares/        # tenant, errorHandler, auth, validación
 │   └── utils/
 ├── docs/
@@ -70,15 +71,18 @@ Reglas:
 - En el SQL de los repositories no se pone el prefijo del schema en las tablas de tenant (`SELECT * FROM viajes`). El `search_path` se encarga de eso. Las tablas globales sí van calificadas (`public.instituciones`).
 - **Migraciones:** las de `db/public/` se corren una sola vez. Las de `db/tenant/` se corren sobre todos los schemas de tenant existentes, y también al crear uno nuevo.
 
-## Autenticación (módulo `auth`)
+## Autenticación y autorización (módulo `auth`)
 
 - JWT HS256 firmado con `JWT_SECRET`, con expiración `JWT_EXPIRES_IN`. Payload: `sub` = id del usuario, `institucion_id`, `rol`. Helpers en `shared/utils/jwt.js`.
 - Contraseñas con `bcryptjs` (10 rounds): mínimo 8 caracteres, máximo 72 bytes.
 - Endpoints:
   - `POST /auth/register` → 201 `{ usuario, token }`. Errores: 400 datos inválidos, 403 dominio no permitido, 409 correo ya registrado.
+  - `POST /auth/login` → 200 `{ usuario, token }`. El dominio del correo decide en qué schema se busca. Dominio, correo o contraseña incorrectos dan siempre el mismo 401 `CREDENCIALES_INVALIDAS` (y bcrypt corre igual con un hash de relleno, para no revelar qué correos existen). Solo con la contraseña correcta: 403 `USUARIO_INACTIVO` o 403 `CORREO_NO_VERIFICADO`.
   - `GET /auth/me` → requiere `Authorization: Bearer <token>`.
-- `requireAuth` deja `req.auth = { usuarioId, rol }` y `req.tenant = { id, schema }`.
-- **Pendiente:** verificación de correo. Por ahora el registro devuelve token aunque `correo_verificado_en` sea NULL. Cuando exista el login, debe rechazar a los usuarios no verificados o inactivos.
+- **Roles** (`shared/constants/roles.js`, igual al enum `public.rol_usuario`): `usuario` y `admin` (admin de SU institución). El admin de la plataforma no es un rol: usa `X-Admin-Key`.
+- **`requireAuth`** (`shared/middlewares/auth.js`) llama a `auth.service.autenticar(token)`: valida firma, expiración y tipos de los claims; busca la institución activa en `public.instituciones` y carga al usuario de su schema. Deja `req.auth = { usuarioId, rol }`, `req.tenant = { id, schema }` y `req.usuario`. El rol y el estado se leen de la BD en cada request, **no del token**: desactivar o cambiar de rol a alguien aplica al instante.
+- **`requireRole(...roles)`** va después de `requireAuth`: `router.delete('/x', requireAuth, requireRole(ROLES.ADMIN), ...)`. Si el rol no alcanza: 403 `ROL_INSUFICIENTE`. Si se le pasa un rol que no existe, lanza al arrancar.
+- **Pendiente:** verificación de correo. El registro devuelve token aunque `correo_verificado_en` sea NULL, pero el login rechaza a los no verificados. Mientras no exista el flujo de verificación, se marca a mano en la BD.
 
 ## Errores personalizados
 
