@@ -48,7 +48,7 @@ async function registrar(body) {
       repo.createUsuario(db, { ...datos, passwordHash }),
     );
   } catch (err) {
-    if (err.code === '23505') {
+    if (err.code === '23505' && err.constraint === 'usuarios_correo_key') {
       throw new ConflictError('El correo ya está registrado', { code: 'CORREO_DUPLICADO', cause: err });
     }
     throw err;

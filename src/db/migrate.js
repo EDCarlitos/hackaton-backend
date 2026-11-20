@@ -12,26 +12,45 @@ async function sqlFiles(dir) {
   return files.filter((f) => f.endsWith('.sql')).sort();
 }
 
-// Aplica en orden los .sql de `dir` que no estén en `trackingTable`.
-// Cada archivo corre en su propia transacción. `searchPath` (ya escapado) se fija con SET LOCAL.
-async function applyPending(client, { dir, trackingTable, searchPath, label }) {
+// Destino de las migraciones: `null` = public; si no, el nombre CRUDO del schema del tenant.
+// Todo identificador se escapa aquí con quoteSchema; nunca se recibe SQL ya armado.
+function target(schemaNombre) {
+  if (schemaNombre === null) {
+    return { trackingTable: 'public.schema_migrations', searchPath: null };
+  }
+  const schema = quoteSchema(schemaNombre);
+  return { trackingTable: `${schema}.schema_migrations`, searchPath: `${schema}, public` };
+}
+
+async function ensureTrackingTable(client, trackingTable) {
   await client.query(`
     CREATE TABLE IF NOT EXISTS ${trackingTable} (
       nombre      text PRIMARY KEY,
       aplicado_en timestamptz NOT NULL DEFAULT now()
     )
   `);
+}
+
+async function applyFile(client, { dir, file, trackingTable }) {
+  const sql = await fs.readFile(path.join(dir, file), 'utf8');
+  await client.query(sql);
+  await client.query(`INSERT INTO ${trackingTable} (nombre) VALUES ($1)`, [file]);
+}
+
+// Aplica en orden los .sql de `dir` que aún no estén registrados.
+// Cada archivo corre en su propia transacción.
+async function applyPending(client, { dir, schemaNombre, label }) {
+  const { trackingTable, searchPath } = target(schemaNombre);
+  await ensureTrackingTable(client, trackingTable);
   const { rows } = await client.query(`SELECT nombre FROM ${trackingTable}`);
   const aplicadas = new Set(rows.map((r) => r.nombre));
 
   for (const file of await sqlFiles(dir)) {
     if (aplicadas.has(file)) continue;
-    const sql = await fs.readFile(path.join(dir, file), 'utf8');
     try {
       await client.query('BEGIN');
       if (searchPath) await client.query(`SET LOCAL search_path TO ${searchPath}`);
-      await client.query(sql);
-      await client.query(`INSERT INTO ${trackingTable} (nombre) VALUES ($1)`, [file]);
+      await applyFile(client, { dir, file, trackingTable });
       await client.query('COMMIT');
       console.log(`Migración aplicada [${label}]: ${file}`);
     } catch (err) {
@@ -54,13 +73,7 @@ async function withLock(fn) {
 
 // Migraciones de src/db/public (una sola vez).
 function migratePublic() {
-  return withLock((client) =>
-    applyPending(client, {
-      dir: PUBLIC_DIR,
-      trackingTable: 'public.schema_migrations',
-      label: 'public',
-    }),
-  );
+  return withLock((client) => applyPending(client, { dir: PUBLIC_DIR, schemaNombre: null, label: 'public' }));
 }
 
 // Crea el schema de cada institución (si falta) y le aplica src/db/tenant.
@@ -68,14 +81,8 @@ function migrateTenants() {
   return withLock(async (client) => {
     const { rows } = await client.query('SELECT schema_nombre FROM public.instituciones ORDER BY id');
     for (const { schema_nombre } of rows) {
-      const schema = quoteSchema(schema_nombre);
-      await client.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
-      await applyPending(client, {
-        dir: TENANT_DIR,
-        trackingTable: `${schema}.schema_migrations`,
-        searchPath: `${schema}, public`,
-        label: schema_nombre,
-      });
+      await client.query(`CREATE SCHEMA IF NOT EXISTS ${quoteSchema(schema_nombre)}`);
+      await applyPending(client, { dir: TENANT_DIR, schemaNombre: schema_nombre, label: schema_nombre });
     }
   });
 }
@@ -85,20 +92,13 @@ function migrateTenants() {
 // el ROLLBACK deshace también el schema y sus tablas.
 // Usa CREATE SCHEMA sin IF NOT EXISTS: si ya existe, falla con código 42P06.
 async function createTenantSchema(client, schemaNombre) {
-  const schema = quoteSchema(schemaNombre);
+  const { trackingTable, searchPath } = target(schemaNombre);
   await client.query('SELECT pg_advisory_xact_lock($1)', [LOCK_ID]);
-  await client.query(`CREATE SCHEMA ${schema}`);
-  await client.query(`
-    CREATE TABLE ${schema}.schema_migrations (
-      nombre      text PRIMARY KEY,
-      aplicado_en timestamptz NOT NULL DEFAULT now()
-    )
-  `);
-  await client.query(`SET LOCAL search_path TO ${schema}, public`);
+  await client.query(`CREATE SCHEMA ${quoteSchema(schemaNombre)}`);
+  await ensureTrackingTable(client, trackingTable);
+  await client.query(`SET LOCAL search_path TO ${searchPath}`);
   for (const file of await sqlFiles(TENANT_DIR)) {
-    const sql = await fs.readFile(path.join(TENANT_DIR, file), 'utf8');
-    await client.query(sql);
-    await client.query(`INSERT INTO ${schema}.schema_migrations (nombre) VALUES ($1)`, [file]);
+    await applyFile(client, { dir: TENANT_DIR, file, trackingTable });
   }
   await client.query('SET LOCAL search_path TO public');
 }
