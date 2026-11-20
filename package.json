@@ -2,12 +2,16 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Backend con Express",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js"
+    "start": "node --env-file=.env src/server.js",
+    "dev": "node --env-file=.env --watch src/server.js",
+    "db:migrate": "node --env-file=.env src/db/migrate.js migrate",
+    "db:seed": "node --env-file=.env src/db/migrate.js seed",
+    "db:setup": "node --env-file=.env src/db/migrate.js setup"
   },
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "pg": "^8.23.1"
   }
 }
