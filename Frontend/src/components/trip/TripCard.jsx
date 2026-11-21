@@ -1,30 +1,37 @@
-import { motion } from 'motion/react'
-import { Clock3 } from 'lucide-react'
+import tripTime from '../../assets/figma/trip-time.svg'
 import { Route } from './Route'
 
 /**
- * Tarjeta de viaje genérica: búsqueda, "Mis viajes" (conductor y pasajero).
- * `chip` y `pie` son nodos opcionales (estado, asientos, distancia, acciones).
+ * Tarjeta de viaje (borde izquierdo coral): "Conductores disponibles" e historial.
+ * `estado` va arriba (chip, historial); `extra` a la derecha de la ruta; `pie` abajo.
  */
-export function TripCard({ titulo, horario, origen, destino, chip, pie, onClick, apagada = false }) {
+export function TripCard({ titulo, horario, origen, destino, estado, extra, pie, onClick, apagada = false, historial = false }) {
+  const clases = ['trip-card', historial && 'trip-card--history', apagada && 'trip-card--off'].filter(Boolean).join(' ')
   return (
-    <motion.article
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.985 }}
-      className={`trip-card ${apagada ? 'trip-card--off' : ''}`}
+    <article
+      className={clases}
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick?.()
+        }
+      }}
     >
-      <div className="trip-title">
+      {estado && <div>{estado}</div>}
+      <div className="trip-row trip-title">
         <b>{titulo}</b>
-        <span>
-          <Clock3 size={14} /> {horario}
+        <span className="trip-time">
+          <img src={tripTime} width="14" height="14" alt="" /> {horario}
         </span>
       </div>
-      <div className="flex items-center justify-between gap-2">
+      <div className="trip-row">
         <Route origen={origen} destino={destino} />
-        {chip}
+        {extra}
       </div>
-      {pie && <div className="trip-footer">{pie}</div>}
-    </motion.article>
+      {pie && <div className="trip-row trip-footer">{pie}</div>}
+    </article>
   )
 }

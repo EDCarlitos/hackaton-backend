@@ -1,16 +1,15 @@
-/** Asientos ocupados de un total (llenos en coral, libres en gris). */
-export function SeatCount({ taken, total }) {
-  const seats = Array.from({ length: total }, (_, index) => index < taken)
+import seatAvailable from '../../assets/figma/seat-available.svg'
+import seatOccupied from '../../assets/figma/seat-occupied.svg'
 
+/** Asientos ocupados (coral) y libres (negro), con el texto "3/4 ocupadas". */
+export function SeatCount({ taken, total }) {
   return (
-    <div className="seats">
-      {seats.map((isTaken, index) => (
-        <span key={index} className={isTaken ? undefined : 'empty'}>
-          ♟
-        </span>
+    <div className="seats" aria-label={`${taken} de ${total} plazas ocupadas`}>
+      {Array.from({ length: total }, (_, index) => (
+        <img key={index} src={index < taken ? seatOccupied : seatAvailable} width="16" height="16" alt="" />
       ))}
       <small>
-        {total - taken} {total - taken === 1 ? 'libre' : 'libres'}
+        {taken}/{total} ocupadas
       </small>
     </div>
   )

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { MessageCircle, Send } from 'lucide-react'
+import { MessageCircle, Send, User } from 'lucide-react'
 
 /** Chat de grupo del viaje (RF-23). Recibe el resultado de `useChat(viajeId)`. */
 export function TripChat({ chat }) {
@@ -22,18 +22,18 @@ export function TripChat({ chat }) {
       <header>
         <div>
           <MessageCircle size={20} />
-          <b>Chat del viaje</b>
+          Chat del viaje
         </div>
-        <div className="avatar-stack" title={chat.participantes.map((p) => p.nombre_visible).join(', ')}>
+        <div className="chat-people" aria-label={chat.participantes.map((p) => p.nombre_visible).join(', ')}>
           {chat.participantes.map((p) => (
-            <i key={`${p.papel}-${p.id}`} className={p.papel === 'conductor' ? 'avatar--conductor' : ''}>
-              {p.nombre_visible.charAt(0)}
-            </i>
+            <span key={`${p.papel}-${p.id}`} title={`${p.nombre_visible}${p.papel === 'conductor' ? ' (conductor)' : ''}`}>
+              <User size={24} />
+            </span>
           ))}
         </div>
       </header>
       <div className="chat-messages" ref={lista}>
-        {chat.mensajes.length === 0 && <small className="text-muted">Aún no hay mensajes.</small>}
+        {chat.mensajes.length === 0 && <small>Aún no hay mensajes.</small>}
         <AnimatePresence initial={false}>
           {chat.mensajes.map((message) => (
             <ChatBubble key={message.id} message={message} />
@@ -47,15 +47,16 @@ export function TripChat({ chat }) {
             maxLength={500}
             onChange={(event) => chat.setDraft(event.target.value)}
             placeholder="Escribe un mensaje…"
+            aria-label="Mensaje"
           />
           <button type="submit" aria-label="Enviar mensaje">
             <Send size={18} />
           </button>
         </form>
       ) : (
-        <small className="text-muted">El chat está cerrado para este viaje.</small>
+        <small>El chat está cerrado para este viaje.</small>
       )}
-      {chat.error && <small className="mt-1 block text-coral">{chat.error}</small>}
+      {chat.error && <small className="mt-1 text-coral">{chat.error}</small>}
     </section>
   )
 }
@@ -64,11 +65,11 @@ function ChatBubble({ message }) {
   return (
     <motion.p
       className={message.mio ? 'bubble bubble--mine' : 'bubble'}
-      initial={{ opacity: 0, y: 8, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -4 }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
     >
-      {!message.mio && <b className="block text-[11px]">{message.autor.nombre_visible}</b>}
+      {!message.mio && <b>{message.autor.nombre_visible}</b>}
       {message.texto}
     </motion.p>
   )

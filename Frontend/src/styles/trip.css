@@ -1,326 +1,452 @@
-/* Todo lo que pinta un viaje: components/trip */
+/* Todo lo que pinta un viaje: components/trip y components/map */
 
 /* --- Viaje actual (inicio) --- */
 .current-trip {
-  margin-top: 42px;
-  border: 1px solid var(--color-line);
-  border-radius: 20px;
-  padding: 18px 20px;
+  margin-top: 26px;
+  min-height: 164px;
+  padding: 18px 9px;
+  border-radius: 24px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .current-trip > div,
 .current-trip footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
-.current-trip > div > span {
-  font-size: 14px;
-  font-weight: 600;
+.current-trip > div {
+  min-height: 26px;
+}
+.current-trip > div > span:first-child {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.current-trip__state {
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 500;
 }
 .current-trip h2 {
-  margin: 12px 0 8px;
-  font-size: 18px;
+  font-size: 17px;
+  line-height: 24px;
+  font-weight: 600;
+}
+.current-trip footer {
+  min-height: 40px;
 }
 .current-trip footer p {
   display: grid;
-  gap: 3px;
+  gap: 1px;
+}
+.current-trip footer b {
   font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
 }
 .current-trip footer small {
   font-size: 12px;
-  color: var(--color-muted);
+  line-height: 17px;
 }
-.current-trip footer button,
-.detail-link {
+.text-link {
+  flex: none;
+  padding: 0;
   border: 0;
   background: none;
   display: flex;
   align-items: center;
+  gap: 4px;
   color: var(--color-ink);
-  gap: 3px;
   font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
 }
 
-/* --- Viajes disponibles (inicio) --- */
+/* --- Conductores disponibles (inicio) --- */
 .available {
-  margin-top: 22px;
+  margin-top: 26px;
 }
 .available > header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 18px;
+  gap: 12px;
 }
 .available h2 {
   font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
 }
-.available p {
-  color: var(--color-muted);
-  font-size: 13px;
+.available header p {
   margin-top: 4px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-muted);
 }
 .filter {
+  flex: none;
+  height: 44px;
+  margin-top: -10px;
+  padding: 0;
   border: 0;
   background: none;
   display: flex;
   align-items: center;
   gap: 7px;
   font-size: 13px;
-  padding: 0;
-  height: 25px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.available .field-bar {
+  margin-top: 14px;
+}
+.trip-list {
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
 }
 
 /* --- Tarjeta de viaje --- */
 .trip-card {
   min-height: 125px;
-  gap: 10px;
-  cursor: pointer;
-  border: 1px solid var(--color-coral);
-  border-left: 4px solid var(--color-coral);
-  border-radius: 14px;
-  padding: 10px 14px;
-  margin-top: 12px;
+  padding: 11px 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 10px;
+  border: 0;
+  border-left: 4px solid var(--color-coral);
+  border-radius: 14px;
   background: #fff;
-  transition:
-    background 0.18s ease,
-    box-shadow 0.18s ease;
+  cursor: pointer;
+  transition: background-color 0.18s ease-out;
 }
-.trip-card:hover {
-  background: #fff9f8;
-  box-shadow: 0 7px 18px #f1515614;
+@media (hover: hover) {
+  .trip-card:hover {
+    background: #fff9f8;
+  }
 }
-.trip-card--compact {
-  height: 174px;
-  padding-top: 14px;
+.trip-card--history {
+  padding: 14px;
+  gap: 12px;
 }
-.trip-card--compact .detail-link {
-  justify-content: flex-end;
-  font-size: 12px;
+.trip-card--off {
+  border-left-color: var(--color-line);
 }
-.trip-title,
-.trip-footer {
+.trip-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 .trip-title b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
 }
-.trip-title span {
+.trip-time {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 12px;
+  line-height: 18px;
   font-weight: 500;
 }
-.trip-footer small {
+.trip-footer {
+  flex-wrap: wrap;
   font-size: 11px;
+  line-height: 18px;
+}
+.trip-card--history .trip-footer {
+  font-size: 12px;
+}
+.trip-footer > :last-child {
+  margin-left: auto;
 }
 
 /* --- Ruta (origen → destino) --- */
 .route {
+  min-width: 0;
   display: flex;
   gap: 10px;
   align-items: center;
 }
+.route > img {
+  flex: none;
+}
 .route > div {
+  min-width: 0;
   display: grid;
-  gap: 7px;
+  gap: 8px;
 }
 .route strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
+  line-height: 18px;
   font-weight: 500;
-}
-.route-line {
-  height: 44px;
-  position: relative;
-  width: 8px;
-}
-.route-line::before {
-  content: "";
-  position: absolute;
-  left: 3px;
-  top: 8px;
-  height: 28px;
-  border-left: 1px solid var(--color-coral);
-}
-.route-line i,
-.route-line b {
-  position: absolute;
-  left: 0;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 2px solid var(--color-coral);
-  background: #fff;
-}
-.route-line b {
-  bottom: 0;
-  background: var(--color-coral);
 }
 
 /* --- Asientos --- */
 .seats {
   display: flex;
   align-items: center;
-  gap: 4px;
-  color: var(--color-coral);
-  font-size: 14px;
-  line-height: 1;
-}
-.seats .empty {
-  color: var(--color-line);
+  gap: 5px;
 }
 .seats small {
-  margin-left: 4px;
-  color: var(--color-ink);
   font-size: 11px;
+  line-height: 18px;
 }
 
-/* --- Mapa --- */
-.map-panel {
-  height: 254px;
-  margin-top: 27px;
+/* --- Mapa del recorrido --- */
+.trip-map {
   position: relative;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: var(--color-surface);
-  border-radius: 20px;
+  margin-top: 27px;
 }
-.map-panel::before,
-.map-panel::after {
-  content: "";
-  position: absolute;
-  width: 300px;
-  height: 300px;
-  border: 1px solid var(--color-line);
-  border-radius: 45%;
-  transform: rotate(26deg);
-}
-.map-panel::before {
-  transform: translate(-95px, 80px) rotate(26deg);
-}
-.map-panel > div {
-  display: grid;
-  place-items: center;
-  gap: 8px;
-  z-index: 1;
-}
-.map-panel b {
-  font-size: 15px;
-}
-.map-panel small {
-  color: var(--color-muted);
-  font-size: 12px;
-}
-.map-panel > span {
+.trip-map__pill {
   position: absolute;
   left: 16px;
   bottom: 16px;
-  z-index: 1;
   height: 36px;
-  padding: 0 14px;
+  padding: 0 16px;
   border-radius: 18px;
-  background: white;
   display: flex;
   align-items: center;
   gap: 6px;
+  background: #fff;
   font-size: 12px;
+  line-height: 17px;
   font-weight: 500;
 }
 
-/* --- Resumen del viaje (pasajero) --- */
+/* --- Información del viaje (pasajero) --- */
 .trip-info {
-  border: 1px solid var(--color-line);
-  border-radius: 20px;
   margin-top: 20px;
-  padding: 16px 18px;
+  padding: 18px;
   display: grid;
   gap: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
 }
-.trip-info > div,
+.trip-info__driver {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.trip-info__driver p {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 1px;
+}
+.trip-info__driver b {
+  font-size: 15px;
+  line-height: 21px;
+  font-weight: 600;
+}
+.trip-info__driver small,
+.trip-info__driver b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.trip-info__driver small {
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--color-muted);
+}
+.trip-info__time {
+  flex: none;
+  font-size: 12px;
+  line-height: 17px;
+  font-weight: 500;
+}
+.trip-info__stops {
+  display: grid;
+  gap: 8px;
+}
+.stop {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stop > svg {
+  flex: none;
+}
+.stop--from > svg {
+  color: var(--color-coral);
+}
+.stop p {
+  min-width: 0;
+  display: grid;
+}
+.stop small {
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--color-muted);
+}
+.stop b {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
 .trip-info footer {
+  min-height: 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-.trip-info > div span {
+  gap: 8px;
   font-size: 12px;
-  display: flex;
-  gap: 5px;
-  align-items: center;
+  line-height: 17px;
+  color: var(--color-muted);
 }
-.trip-info footer small {
-  font-size: 11px;
+.trip-info footer span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.trip-info footer svg {
+  color: var(--color-ink);
 }
 
-/* --- Lista de pasajeros (conductor) --- */
+/* Nota debajo de la tarjeta (estado de la reserva, avisos). */
+.note {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--color-surface);
+  font-size: 13px;
+  line-height: 18px;
+}
+.note small {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+/* --- Pasajeros y solicitudes (conductor) --- */
 .passengers {
+  margin-top: 20px;
+  padding: 16px 17px;
   border: 1px solid var(--color-line);
   border-radius: 20px;
-  margin-top: 20px;
-  padding: 16px 18px;
 }
 .passengers header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  margin-bottom: 12px;
 }
-.passengers header > b {
+.passengers header b {
   font-size: 16px;
+  line-height: 21px;
+  font-weight: 600;
 }
-.passengers small {
-  color: var(--color-muted);
+.passengers header small,
+.passengers .empty-row {
   font-size: 12px;
+  line-height: 17px;
+  color: var(--color-muted);
+}
+.passengers .empty-row {
+  padding: 6px 0 4px;
 }
 .passenger {
-  min-height: 54px;
+  min-height: 48px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid var(--color-line);
 }
-.passenger > span {
-  background: var(--color-surface);
-  height: 36px;
-  width: 36px;
-  border-radius: 18px;
-  display: grid;
-  place-items: center;
+/* Separador que empieza después del avatar (36 px + 12 px). */
+.passenger + .passenger {
+  margin-top: 3px;
+  padding-top: 3px;
+  background: linear-gradient(var(--color-line), var(--color-line)) 48px 0 / calc(100% - 48px) 1px no-repeat;
 }
 .passenger p {
-  display: grid;
-  gap: 3px;
+  min-width: 0;
   flex: 1;
+  display: grid;
+  gap: 2px;
 }
 .passenger p b {
   font-size: 14px;
+  line-height: 19px;
+  font-weight: 600;
+}
+.passenger p small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--color-muted);
 }
 .passenger em {
-  color: var(--color-muted);
+  flex: none;
   font-style: normal;
   font-size: 12px;
+  line-height: 17px;
+  font-weight: 500;
+  color: var(--color-muted);
+}
+.passenger-actions {
+  display: flex;
+  gap: 8px;
+}
+.passenger-actions button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  background: #fff;
+}
+.passenger-actions button.accept {
+  border-color: var(--color-coral);
+  background: var(--color-coral);
+  color: #fff;
+}
+.passenger-actions button:disabled {
+  opacity: 0.4;
 }
 .passengers footer {
+  margin-top: 10px;
+  padding-top: 11px;
   display: grid;
-  gap: 5px;
-  padding-top: 12px;
+  gap: 4px;
+  border-top: 1px solid var(--color-line);
 }
 .passengers footer b {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+}
+.passengers footer small {
   font-size: 12px;
+  line-height: 17px;
+  color: var(--color-muted);
 }
 
-.trip-card--off {
-  border-color: var(--color-line);
-  border-left-color: var(--color-line);
-}
-.trip-footer {
+/* Acciones secundarias al final del detalle. */
+.detail-actions {
+  margin-top: 24px;
+  display: grid;
   gap: 8px;
-  flex-wrap: wrap;
 }
