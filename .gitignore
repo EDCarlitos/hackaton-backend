@@ -1,0 +1,6 @@
+# Herramientas locales del agente (no son parte del producto)
+.agents/
+skills-lock.json
+
+node_modules/
+.env
