@@ -1,60 +1,61 @@
 /* Todo lo que pinta un viaje: components/trip y components/map */
 
-/* --- Viaje actual (inicio) --- */
+/* --- Viaje actual (inicio): tarjeta gris, toda tocable --- */
 .current-trip {
-  margin-top: 26px;
-  min-height: 164px;
-  padding: 18px 0;
-  border-radius: 24px;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  width: 100%;
+  margin-top: 24px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 10px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--color-surface);
+  text-align: left;
+  transition: transform 140ms var(--ease-out);
 }
-.current-trip > div,
-.current-trip footer {
+.current-trip:active {
+  transform: scale(0.98);
+}
+.current-trip__top,
+.current-trip__bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
-.current-trip > div {
-  min-height: 26px;
-}
-.current-trip > div > span:first-child {
+.current-trip__top > span:first-child {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-}
-.current-trip__state {
-  font-size: 12px;
-  line-height: 17px;
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 500;
+  color: var(--color-muted);
 }
-.current-trip h2 {
+.current-trip__top svg {
+  color: var(--color-ink);
+}
+.current-trip__route {
   font-size: 17px;
   line-height: 24px;
   font-weight: 600;
 }
-.current-trip footer {
-  min-height: 40px;
-}
-.current-trip footer p {
+.current-trip__bottom > span:first-child {
   display: grid;
   gap: 1px;
 }
-.current-trip footer b {
+.current-trip__bottom b {
   font-size: 14px;
   line-height: 20px;
   font-weight: 500;
 }
-.current-trip footer small {
+.current-trip__bottom small {
   font-size: 12px;
   line-height: 17px;
+  color: var(--color-muted);
 }
+
+/* Enlace de texto con flecha ("Ver viaje >"). */
 .text-link {
   flex: none;
   padding: 0;
@@ -67,11 +68,12 @@
   font-size: 13px;
   line-height: 18px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 /* --- Conductores disponibles (inicio) --- */
 .available {
-  margin-top: 26px;
+  margin-top: 28px;
 }
 .available > header {
   display: flex;
@@ -94,6 +96,7 @@
   flex: none;
   height: 44px;
   margin-top: -10px;
+  color: var(--color-ink);
   padding: 0;
   border: 0;
   background: none;
@@ -104,8 +107,46 @@
   line-height: 18px;
   font-weight: 500;
 }
-.available .field-bar {
-  margin-top: 14px;
+.filters-summary {
+  max-width: 100%;
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--color-teal);
+  font-weight: 500;
+  text-align: left;
+}
+.empty-cta {
+  padding: 20px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  border-radius: 16px;
+  background: var(--color-surface);
+  text-align: center;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-muted);
+}
+.empty-cta button {
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--color-coral);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 140ms var(--ease-out);
+}
+.empty-cta button:active {
+  transform: scale(0.96);
 }
 .trip-list {
   margin-top: 20px;
@@ -136,6 +177,9 @@
 .trip-card--history {
   padding: 14px;
   gap: 12px;
+}
+.trip-card--teal {
+  border-left-color: var(--color-teal);
 }
 .trip-card--off {
   border-left-color: var(--color-line);
@@ -213,8 +257,7 @@
 
 /* --- Mapa del recorrido --- */
 .trip-map {
-  position: relative;
-  margin-top: 27px;
+  margin-top: 16px;
 }
 .trip-map__pill {
   position: absolute;
@@ -449,4 +492,15 @@
   margin-top: 24px;
   display: grid;
   gap: 8px;
+}
+/* Acción destructiva discreta: no compite con lo principal, pero se encuentra. */
+.danger-link {
+  justify-self: center;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--color-coral);
+  font-size: 14px;
+  font-weight: 500;
 }

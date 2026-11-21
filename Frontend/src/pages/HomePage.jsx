@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { AnimatePresence } from 'motion/react'
-import { MapPin, SlidersHorizontal } from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { BottomNav } from '../components/layout/BottomNav'
 import { HomeHeader } from '../components/layout/HomeHeader'
 import { PhoneFrame } from '../components/layout/PhoneFrame'
@@ -11,39 +11,33 @@ import { SearchModal } from '../components/modals/SearchModal'
 import { CurrentTripCard } from '../components/trip/CurrentTripCard'
 import { SeatCount } from '../components/trip/SeatCount'
 import { TripCard } from '../components/trip/TripCard'
-import { Empty, ErrorBanner, Loading } from '../components/ui/Feedback'
+import { ErrorBanner, Loading } from '../components/ui/Feedback'
 import { StatusChip } from '../components/ui/StatusChip'
 import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { api } from '../lib/api'
-import {
-  aInputFechaHora,
-  ESTADO_RESERVA,
-  formatCostoCorto,
-  formatDia,
-  formatDiaHora,
-  formatMetros,
-  formatRangoHora,
-} from '../lib/format'
+import { HORAS_BUSQUEDA, ORDENES, resolverHora } from '../lib/horas'
+import { ESTADO_RESERVA, formatCostoCorto, formatDia, formatMetros, formatRangoHora, tonoEstado } from '../lib/format'
 
-const MODALS = { SEARCH: 'search', NOTIFICATIONS: 'notifications', PROFILE: 'profile' }
-const ORDEN = { CERCANIA: 'Más cercano', HORA: 'Más próximo' }
+const MODALS = { FILTROS: 'filtros', NOTIFICATIONS: 'notifications', PROFILE: 'profile' }
 const CLAVE_BUSQUEDA = 'rutacaribe.busqueda'
+const HORA_INICIAL = { id: 'ahora', otra: '' }
 
-// Recogida y bajada de la última búsqueda (solo en este navegador). La hora siempre arranca en "ahora".
-function leerBusquedaGuardada() {
+// Recogida, bajada y orden de la última búsqueda (solo en este navegador). La hora arranca en "Ahora".
+function leerFiltrosGuardados() {
+  const base = { recogida: null, bajada: null, hora: HORA_INICIAL, orden: ORDENES[0] }
   try {
-    const guardada = JSON.parse(localStorage.getItem(CLAVE_BUSQUEDA) || 'null')
-    if (guardada?.recogida) return { recogida: guardada.recogida, bajada: guardada.bajada || null, cuando: aInputFechaHora(new Date()) }
+    const g = JSON.parse(localStorage.getItem(CLAVE_BUSQUEDA) || 'null')
+    if (g?.recogida) return { ...base, recogida: g.recogida, bajada: g.bajada || null, orden: ORDENES.includes(g.orden) ? g.orden : base.orden }
   } catch {
     // sin almacenamiento: se empieza de cero
   }
-  return null
+  return base
 }
 
-function guardarBusqueda({ recogida, bajada }) {
+function guardarFiltros({ recogida, bajada, orden }) {
   try {
-    localStorage.setItem(CLAVE_BUSQUEDA, JSON.stringify({ recogida, bajada }))
+    localStorage.setItem(CLAVE_BUSQUEDA, JSON.stringify({ recogida, bajada, orden }))
   } catch {
     // no pasa nada si no se puede guardar
   }
@@ -75,6 +69,7 @@ async function cargarProximo() {
       salida_en: v.salida_en,
       origen: v.origen,
       destino: v.destino,
+      pendientes: v.solicitudes_pendientes,
       detalle:
         v.solicitudes_pendientes > 0
           ? `${plural(v.solicitudes_pendientes, 'solicitud')} por responder`
@@ -85,33 +80,36 @@ async function cargarProximo() {
   return proximo ? { ...proximo, yaSalio: new Date(proximo.salida_en).getTime() <= Date.now() } : null
 }
 
-async function buscarViajes(consulta) {
-  if (!consulta) return null
+async function buscarViajes({ recogida, bajada, hora }) {
+  if (!recogida) return null
   // Si la hora elegida ya pasó (pantalla abierta mucho rato), se busca desde ahora.
-  const salida = new Date(Math.max(new Date(consulta.cuando).getTime(), Date.now()))
+  const elegida = resolverHora(HORAS_BUSQUEDA, hora) || new Date()
+  const salida = new Date(Math.max(elegida.getTime(), Date.now()))
   return api.get('/viajes/buscar', {
-    recogida_lat: consulta.recogida.lat,
-    recogida_lng: consulta.recogida.lng,
-    bajada_lat: consulta.bajada?.lat,
-    bajada_lng: consulta.bajada?.lng,
+    recogida_lat: recogida.lat,
+    recogida_lng: recogida.lng,
+    bajada_lat: bajada?.lat,
+    bajada_lng: bajada?.lng,
     salida_en: salida.toISOString(),
   })
 }
 
-/** Inicio: viaje actual y conductores que pasan cerca del punto de recogida. */
+/** Inicio (como en Figma): tu viaje actual y "Conductores disponibles"; el botón de orden abre los filtros. */
 export function HomePage({ navigate }) {
-  const [consulta, setConsulta] = useState(leerBusquedaGuardada)
-  const [orden, setOrden] = useState(ORDEN.CERCANIA)
+  const [filtros, setFiltros] = useState(leerFiltrosGuardados)
   const [seleccionado, setSeleccionado] = useState(null)
   const [modal, setModal] = useState(null)
 
   const proximo = useAsync(cargarProximo, '', { intervaloMs: 30_000 })
   const avisos = useAsync(() => api.get('/notificaciones', { no_leidas: 'true', limite: 1 }), '', { intervaloMs: 20_000 })
+  const { recogida, bajada, hora, orden } = filtros
+  // El orden se aplica en el cliente: no forma parte de la consulta al API.
+  const consulta = { recogida, bajada, hora }
   const busqueda = useAsync(() => buscarViajes(consulta), JSON.stringify(consulta))
 
   const resultados = useMemo(() => {
     const lista = busqueda.data?.resultados || []
-    if (orden === ORDEN.HORA) return [...lista].sort((a, b) => Math.abs(a.diferencia_min) - Math.abs(b.diferencia_min))
+    if (orden === ORDENES[1]) return [...lista].sort((a, b) => Math.abs(a.diferencia_min) - Math.abs(b.diferencia_min))
     return lista // el API ya los manda por distancia a pie y luego por hora (RF-13)
   }, [busqueda.data, orden])
 
@@ -123,18 +121,18 @@ export function HomePage({ navigate }) {
     [navigate],
   )
 
-  const buscar = (nueva) => {
-    guardarBusqueda(nueva)
-    setConsulta(nueva)
+  const aplicar = (nuevos) => {
+    guardarFiltros(nuevos)
+    setFiltros(nuevos)
     setModal(null)
   }
+  const abrirFiltros = () => setModal(MODALS.FILTROS)
 
   const n = resultados.length
-  const resumen = !consulta
-    ? 'Elige dónde te recogen'
-    : busqueda.cargando && !busqueda.data
-      ? 'Buscando…'
-      : `${n} viaje${n === 1 ? '' : 's'} cerca de ti`
+  const cargandoPrimera = recogida && busqueda.cargando && !busqueda.data
+  const textoHora = hora.id === 'otra' ? 'a esa hora' : HORAS_BUSQUEDA.find((o) => o.id === hora.id)?.texto.toLowerCase()
+  // Qué se está filtrando, en una sola línea discreta.
+  const filtrosTexto = recogida && [recogida.texto, bajada && `a ${bajada.texto}`, textoHora].filter(Boolean).join(' · ')
 
   return (
     <PhoneFrame className="app-screen">
@@ -152,32 +150,43 @@ export function HomePage({ navigate }) {
         <header>
           <div>
             <h2>Conductores disponibles</h2>
-            <p>{resumen}</p>
+            <p>
+              {!recogida
+                ? 'Elige dónde te recogen'
+                : cargandoPrimera
+                  ? 'Buscando…'
+                  : `${n} viaje${n === 1 ? '' : 's'} cerca de ti`}
+            </p>
           </div>
-          {consulta && (
-            <button
-              type="button"
-              className="filter"
-              onClick={() => setOrden((o) => (o === ORDEN.CERCANIA ? ORDEN.HORA : ORDEN.CERCANIA))}
-            >
-              <SlidersHorizontal size={18} /> {orden}
-            </button>
-          )}
+          <button type="button" className="filter" onClick={abrirFiltros} aria-label={`Filtros. Orden: ${orden}`}>
+            <SlidersHorizontal size={18} /> {orden}
+          </button>
         </header>
-
-        <button type="button" className="field-bar" onClick={() => setModal(MODALS.SEARCH)}>
-          <MapPin size={16} />
-          <span>{consulta ? consulta.recogida.texto : '¿Dónde te recogen?'}</span>
-          {consulta && <small>{formatDiaHora(consulta.cuando)}</small>}
-        </button>
+        {filtrosTexto && (
+          <button type="button" className="filters-summary" onClick={abrirFiltros}>
+            {filtrosTexto}
+          </button>
+        )}
 
         <ErrorBanner error={busqueda.error} className="mt-4" />
-        {consulta && busqueda.cargando && !busqueda.data && <Loading texto="Buscando conductores…" />}
+        {cargandoPrimera && <Loading texto="Buscando conductores…" />}
 
         <div className="trip-list">
-          {!consulta && <Empty>Toca la barra de arriba y elige tu punto de recogida para ver quién pasa cerca.</Empty>}
-          {consulta && busqueda.data && !n && (
-            <Empty>No hay viajes que pasen cerca a esa hora. Prueba otro punto de recogida u otra hora.</Empty>
+          {!recogida && (
+            <div className="empty-cta">
+              <p>Dinos dónde te recogen y te mostramos a quién le queda de paso.</p>
+              <button type="button" onClick={abrirFiltros}>
+                Elegir punto de recogida
+              </button>
+            </div>
+          )}
+          {recogida && busqueda.data && !n && (
+            <div className="empty-cta">
+              <p>Nadie pasa cerca {textoHora}. Los viajes de la mañana suelen salir entre 6:30 y 7:30.</p>
+              <button type="button" onClick={abrirFiltros}>
+                Cambiar filtros
+              </button>
+            </div>
           )}
           {resultados.map((r) => (
             <TripCard
@@ -186,7 +195,10 @@ export function HomePage({ navigate }) {
               horario={`${formatDia(r.salida_en) === 'Hoy' ? '' : `${formatDia(r.salida_en)} · `}${formatRangoHora(r.salida_en, r.ruta.duracion_min)}`}
               origen={r.origen}
               destino={r.destino}
-              extra={r.mi_reserva && <StatusChip>{ESTADO_RESERVA[r.mi_reserva.estado]}</StatusChip>}
+              tono={r.mi_reserva ? tonoEstado(r.mi_reserva.estado) : 'coral'}
+              extra={
+                r.mi_reserva && <StatusChip tono={tonoEstado(r.mi_reserva.estado)}>{ESTADO_RESERVA[r.mi_reserva.estado]}</StatusChip>
+              }
               onClick={() => setSeleccionado(r)}
               pie={
                 <>
@@ -204,20 +216,13 @@ export function HomePage({ navigate }) {
       <BottomNav activePage={PAGES.HOME} navigate={navigate} />
 
       <AnimatePresence>
-        {modal === MODALS.SEARCH && (
-          <SearchModal
-            key="s"
-            inicial={consulta || { recogida: null, bajada: null, cuando: aInputFechaHora(new Date()) }}
-            onBuscar={buscar}
-            onClose={() => setModal(null)}
-          />
-        )}
+        {modal === MODALS.FILTROS && <SearchModal key="f" inicial={filtros} onAplicar={aplicar} onClose={() => setModal(null)} />}
         {seleccionado && (
           <RideModal
             key="ride"
             resultado={seleccionado}
-            recogida={consulta.recogida}
-            bajada={consulta.bajada}
+            recogida={recogida}
+            bajada={bajada}
             onReservado={() => {
               proximo.reload()
               busqueda.reload()

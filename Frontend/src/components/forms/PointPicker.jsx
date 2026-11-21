@@ -42,7 +42,15 @@ function textoDeSugerencia(s, privado) {
  * frecuentes), con la ubicación actual (una sola vez, sin rastreo) o tocando el mapa.
  * value/onChange: { lat, lng, texto } | null. `privado`: origen/destino del conductor.
  */
-export function PointPicker({ label, value, onChange, placeholder = 'Busca una dirección o lugar', opcional = false, privado = false }) {
+export function PointPicker({
+  label,
+  value,
+  onChange,
+  placeholder = 'Busca una dirección o lugar',
+  opcional = false,
+  privado = false,
+  autoFocus = false,
+}) {
   const [texto, setTexto] = useState(value?.texto || '')
   const [abierto, setAbierto] = useState(false)
   const [sugerencias, setSugerencias] = useState([])
@@ -138,6 +146,8 @@ export function PointPicker({ label, value, onChange, placeholder = 'Busca una d
             placeholder={placeholder}
             aria-label={label}
             autoComplete="off"
+            autoFocus={autoFocus}
+            enterKeyHint="search"
             onFocus={() => setAbierto(true)}
             onBlur={() => setTimeout(() => setAbierto(false), 150)}
             onChange={(e) => {
@@ -204,7 +214,7 @@ export function PointPicker({ label, value, onChange, placeholder = 'Busca una d
             onPick={elegirEnMapa}
             marcadores={[
               ...LUGARES.map((l) => ({ ...l, tipo: 'lugar', etiqueta: l.texto.split(' (')[0] })),
-              ...(value ? [{ ...value, tipo: 'recogida', etiqueta: 'Aquí' }] : []),
+              ...(value ? [{ ...value, tipo: 'destino', etiqueta: 'Aquí' }] : []),
             ]}
           />
           <p className="text-[11px] text-muted">Toca el mapa para elegir el punto.</p>
