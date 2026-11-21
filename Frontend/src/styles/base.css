@@ -3,14 +3,18 @@
   box-sizing: border-box;
 }
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
+  color: inherit;
 }
 button {
   cursor: pointer;
 }
 h1,
 h2,
+h3,
 p {
   margin: 0;
 }
@@ -27,16 +31,19 @@ h1 {
   color: var(--color-ink);
   font-family: var(--font-body);
 }
+/* overflow: clip (no hidden) para que la navegación inferior pueda ser sticky. */
 .phone {
   width: 430px;
   min-height: 932px;
-  overflow: hidden;
+  overflow: clip;
   position: relative;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   box-shadow: 0 18px 50px #1917161f;
 }
 .app-screen {
-  padding: 36px 24px 112px;
+  padding: 36px 24px 0;
 }
 
 @media (max-width: 480px) {

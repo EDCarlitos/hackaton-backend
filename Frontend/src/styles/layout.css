@@ -1,12 +1,25 @@
 /* Encabezados y navegación inferior: components/layout */
+
+/* --- Inicio --- */
 .home-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 12px;
+}
+.home-header > div:first-child {
+  padding-top: 8px;
 }
 .home-header h1 {
   font-size: 28px;
   line-height: 38px;
+  font-weight: 600;
+}
+.home-header p {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-muted);
 }
 .home-header > div:last-child {
   display: flex;
@@ -14,19 +27,16 @@
   margin-top: 4px;
 }
 
+/* --- Detalle (con botón de volver) y encabezado simple --- */
 .detail-header {
   display: grid;
   grid-template-columns: 44px 1fr auto;
   gap: 12px;
-  align-items: center;
-}
-.detail-header .icon-button {
-  align-self: start;
+  align-items: start;
 }
 .detail-header .status-chip {
   margin-top: 8px;
 }
-
 .detail-header h1,
 .simple-header h1 {
   font-family: var(--font-body);
@@ -34,48 +44,70 @@
   line-height: 31px;
   font-weight: 600;
 }
-.home-header p,
 .detail-header p,
 .simple-header p {
+  margin-top: 4px;
   font-size: 13px;
+  line-height: 18px;
   color: var(--color-muted);
-  margin-top: 2px;
 }
 
+/* --- Navegación inferior: siempre visible al fondo de la pantalla --- */
+.nav-spacer {
+  flex: 1 0 24px;
+}
 .bottom-nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
   height: 100px;
-  position: absolute;
-  inset: auto 0 0;
-  border-top: 1px solid var(--color-line);
-  background: #fff;
+  margin: 0 -24px;
   padding: 12px 24px 24px;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  background: #fff;
 }
 .bottom-nav button {
-  width: 25%;
-  background: transparent;
+  flex: 1;
+  height: 48px;
+  padding: 0;
   border: 0;
+  background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   gap: 6px;
   color: var(--color-ink);
   font-size: 12px;
+  line-height: 17px;
 }
 .bottom-nav button.active {
   font-weight: 600;
 }
+.bottom-nav button.active svg {
+  color: var(--color-coral);
+}
 .bottom-nav .publish {
+  height: 64px;
+  justify-content: center;
   gap: 4px;
+  font-weight: 500;
 }
 .bottom-nav .publish i {
-  background: var(--color-coral);
   width: 40px;
   height: 40px;
   border-radius: 20px;
   display: grid;
   place-items: center;
   font-style: normal;
+  color: #fff;
+  background: var(--color-coral);
+  transition: transform 0.16s ease-out;
+}
+.bottom-nav .publish:active i {
+  transform: scale(0.94);
+}
+.bottom-nav .publish.active svg {
+  color: #fff;
 }

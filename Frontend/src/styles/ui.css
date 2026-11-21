@@ -2,6 +2,7 @@
 .icon-button {
   width: 44px;
   height: 44px;
+  flex: none;
   display: grid;
   place-items: center;
   border: 0;
@@ -12,14 +13,59 @@
 .status-chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   height: 28px;
-  padding: 0 14px;
+  padding: 0 16px;
   border-radius: 14px;
   font-size: 12px;
+  line-height: 17px;
   font-weight: 500;
+  white-space: nowrap;
+  color: var(--color-ink);
   background: var(--color-coral);
 }
 .status-chip--off {
   background: var(--color-surface);
+}
+
+/* Avatar genérico (marcador de foto): círculo gris con el ícono de usuario. */
+.avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface);
+}
+.avatar--lg {
+  width: 48px;
+  height: 48px;
+}
+
+/* Barra gris tipo campo (búsqueda, chat). */
+.field-bar {
+  height: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-surface);
+  font-size: 13px;
+  line-height: 18px;
+  text-align: left;
+}
+.field-bar > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.field-bar small {
   color: var(--color-muted);
+  font-size: 12px;
 }
