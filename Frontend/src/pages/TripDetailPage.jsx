@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CircleCheck, CircleX, Hourglass, Leaf } from 'lucide-react'
 import { TripChat } from '../components/chat/TripChat'
 import { BottomNav } from '../components/layout/BottomNav'
 import { DetailHeader } from '../components/layout/DetailHeader'
@@ -11,15 +12,39 @@ import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { useChat } from '../hooks/useChat'
 import { api } from '../lib/api'
-import { ESTADO_RESERVA, ESTADO_VIAJE, esEstadoActivo, formatDiaHora, formatMetros } from '../lib/format'
+import { ESTADO_RESERVA, ESTADO_VIAJE, formatDiaHora, formatHora, formatMetros, tonoEstado } from '../lib/format'
 
-const EXPLICACION = {
-  solicitada: 'Tu solicitud está pendiente. Te avisaremos cuando el conductor la acepte o la rechace.',
-  confirmada: '¡Tienes lugar! Llega al punto de abordaje unos minutos antes de la hora.',
-  rechazada: 'El conductor no pudo aceptar tu solicitud (o el viaje se llenó). Busca otro viaje compatible.',
-  cancelada: 'Esta reserva está cancelada.',
-  completada: 'Viaje completado. Suma a tu contador de impacto.',
-  expirada: 'La solicitud expiró porque el viaje salió sin respuesta.',
+// Qué sigue para el pasajero, según el estado de su reserva.
+function siguientePaso(viaje, reserva) {
+  const lugar = reserva?.recogida?.texto || 'el punto que elegiste'
+  switch (reserva?.estado) {
+    case 'solicitada':
+      return {
+        tono: 'coral',
+        icono: Hourglass,
+        titulo: 'Esperando al conductor',
+        texto: `Te avisamos en cuanto acepte. Pediste que te recogieran en ${lugar}.`,
+      }
+    case 'confirmada':
+      return {
+        tono: 'teal',
+        icono: CircleCheck,
+        titulo: '¡Tienes lugar!',
+        texto: reserva.punto_abordaje
+          ? `Camina al punto de abordaje (turquesa en el mapa) y llega antes de las ${formatHora(viaje.salida_en)}. El conductor no hace desvíos.`
+          : `Te recogen en ${lugar} a las ${formatHora(viaje.salida_en)}.`,
+      }
+    case 'completada':
+      return { tono: 'teal', icono: Leaf, titulo: 'Viaje completado', texto: 'Sumó a tu impacto ambiental.', accion: 'impacto' }
+    case 'rechazada':
+      return { icono: CircleX, titulo: 'No hubo lugar', texto: 'El conductor no aceptó o el viaje se llenó.', accion: 'buscar' }
+    case 'expirada':
+      return { icono: CircleX, titulo: 'La solicitud expiró', texto: 'El viaje salió sin respuesta.', accion: 'buscar' }
+    case 'cancelada':
+      return { icono: CircleX, titulo: 'Reserva cancelada', texto: 'Ya no tienes lugar en este viaje.', accion: 'buscar' }
+    default:
+      return { icono: CircleX, titulo: 'No tienes reserva aquí', texto: 'Busca un viaje que pase cerca de ti.', accion: 'buscar' }
+  }
 }
 
 /** Detalle del viaje, vista de pasajero ({ viajeId }). */
@@ -39,8 +64,10 @@ export function TripDetailPage({ navigate, params }) {
   const reserva = viaje?.mi_reserva
   const cancelable = reserva && ['solicitada', 'confirmada'].includes(reserva.estado) && !data.yaSalio
   const estado = reserva
-    ? { texto: ESTADO_RESERVA[reserva.estado], activo: esEstadoActivo(reserva.estado) }
-    : viaje && { texto: ESTADO_VIAJE[viaje.estado], activo: esEstadoActivo(viaje.estado) }
+    ? { texto: ESTADO_RESERVA[reserva.estado], tono: tonoEstado(reserva.estado) }
+    : viaje && { texto: ESTADO_VIAJE[viaje.estado], tono: tonoEstado(viaje.estado) }
+  const paso = viaje && siguientePaso(viaje, reserva)
+  const IconoPaso = paso?.icono
 
   const cancelar = async () => {
     setEnviando(true)
@@ -61,7 +88,7 @@ export function TripDetailPage({ navigate, params }) {
       <DetailHeader
         subtitle={viaje ? (viaje.estado === 'en_curso' ? 'Viaje actual' : formatDiaHora(viaje.salida_en)) : 'Cargando…'}
         status={estado?.texto}
-        statusActivo={estado?.activo}
+        statusTono={estado?.tono}
         onBack={() => navigate(PAGES.HISTORY)}
       />
       {cargando && <Loading />}
@@ -69,6 +96,24 @@ export function TripDetailPage({ navigate, params }) {
 
       {viaje && (
         <>
+          <div className={`next-step ${paso.tono ? `next-step--${paso.tono}` : ''}`}>
+            <IconoPaso size={20} />
+            <div>
+              <b>{paso.titulo}</b>
+              <p>{paso.texto}</p>
+              {paso.accion === 'buscar' && (
+                <button type="button" onClick={() => navigate(PAGES.HOME)}>
+                  Buscar otro viaje
+                </button>
+              )}
+              {paso.accion === 'impacto' && (
+                <button type="button" onClick={() => navigate(PAGES.IMPACT)}>
+                  Ver mi impacto
+                </button>
+              )}
+            </div>
+          </div>
+
           <TripMap
             polilinea={viaje.ruta.polilinea}
             etiqueta={
@@ -82,19 +127,10 @@ export function TripDetailPage({ navigate, params }) {
               ...(reserva ? [{ ...reserva.recogida, tipo: 'recogida', etiqueta: 'Tú' }] : []),
               ...(reserva?.punto_abordaje ? [{ ...reserva.punto_abordaje, tipo: 'abordaje', etiqueta: 'Abordaje' }] : []),
             ]}
+            leyenda={reserva?.punto_abordaje ? ['origen', 'destino', 'recogida', 'abordaje'] : ['origen', 'destino']}
           />
 
           <TripInfo viaje={viaje} />
-
-          <div className="note">
-            {reserva ? EXPLICACION[reserva.estado] : 'No tienes una reserva en este viaje.'}
-            {reserva && (
-              <small>
-                Te recogen en: {reserva.recogida.texto || 'el punto que elegiste'}
-                {reserva.punto_abordaje && ' · camina hasta el punto verde del mapa, el conductor no hace desvíos'}
-              </small>
-            )}
-          </div>
 
           <TripChat chat={chat} />
 
@@ -114,9 +150,9 @@ export function TripDetailPage({ navigate, params }) {
                   </PrimaryButton>
                 </>
               ) : (
-                <PrimaryButton variante="secundario" onClick={() => setConfirmarCancelar(true)}>
-                  Cancelar reserva
-                </PrimaryButton>
+                <button type="button" className="danger-link" onClick={() => setConfirmarCancelar(true)}>
+                  Cancelar mi reserva
+                </button>
               )}
             </div>
           )}

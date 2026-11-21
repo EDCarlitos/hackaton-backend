@@ -1,16 +1,19 @@
 import { MapPin } from 'lucide-react'
-import { RouteMap } from './RouteMap'
+import { MapLegend, RouteMap } from './RouteMap'
 
-/** "Mapa del recorrido" de los detalles: mapa de 254 px con una etiqueta abajo a la izquierda. */
-export function TripMap({ polilinea, marcadores, etiqueta }) {
+/** "Mapa del recorrido" de los detalles: mapa grande, etiqueta abajo a la izquierda y leyenda. */
+export function TripMap({ polilinea, marcadores, etiqueta, leyenda }) {
   return (
     <div className="trip-map">
-      <RouteMap polilinea={polilinea} marcadores={marcadores} alto={254} />
-      {etiqueta && (
-        <span className="trip-map__pill">
-          <MapPin size={16} /> {etiqueta}
-        </span>
-      )}
+      <div className="relative">
+        <RouteMap polilinea={polilinea} marcadores={marcadores} alto={340} />
+        {etiqueta && (
+          <span className="trip-map__pill">
+            <MapPin size={16} /> {etiqueta}
+          </span>
+        )}
+      </div>
+      {leyenda && <MapLegend tipos={leyenda} />}
     </div>
   )
 }

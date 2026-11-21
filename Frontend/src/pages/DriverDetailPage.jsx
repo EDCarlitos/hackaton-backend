@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'motion/react'
-import { Check, Copy, User, X } from 'lucide-react'
+import { Ban, CarFront, Check, CircleCheck, Copy, Inbox, User, X } from 'lucide-react'
 import { TripChat } from '../components/chat/TripChat'
 import { BottomNav } from '../components/layout/BottomNav'
 import { DetailHeader } from '../components/layout/DetailHeader'
@@ -17,14 +17,45 @@ import { api } from '../lib/api'
 import {
   ESTADO_RESERVA,
   ESTADO_VIAJE,
-  esEstadoActivo,
   formatCosto,
   formatDia,
   formatMetros,
   formatRangoHora,
   formatRuta,
+  tonoEstado,
 } from '../lib/format'
 import { TripDetailPage } from './TripDetailPage'
+
+// Qué sigue para el conductor, según el estado del viaje y sus solicitudes.
+function siguientePaso(viaje, pendientes, confirmados) {
+  const libres = viaje.asientos_disponibles
+  const n = confirmados.length
+  if (viaje.estado === 'cancelado') {
+    return { icono: Ban, titulo: 'Viaje cancelado', texto: viaje.motivo_cancelacion || 'Los pasajeros recibieron un aviso.' }
+  }
+  if (viaje.estado === 'finalizado') {
+    return { tono: 'teal', icono: CircleCheck, titulo: 'Viaje finalizado', texto: `Compartiste el viaje con ${n} pasajero${n === 1 ? '' : 's'}.` }
+  }
+  if (pendientes.length) {
+    return {
+      tono: 'coral',
+      icono: Inbox,
+      titulo: `${pendientes.length} solicitud${pendientes.length === 1 ? '' : 'es'} por responder`,
+      texto: 'Acepta o rechaza abajo. Si el viaje se llena, las demás se rechazan solas.',
+    }
+  }
+  if (viaje.estado === 'en_curso') return { tono: 'coral', icono: CarFront, titulo: 'En camino', texto: 'Buen viaje.' }
+  if (viaje.estado === 'lleno') return { tono: 'teal', icono: CircleCheck, titulo: 'Viaje lleno', texto: `Llevas ${n} pasajero${n === 1 ? '' : 's'}.` }
+  if (n) {
+    return {
+      tono: 'teal',
+      icono: CircleCheck,
+      titulo: `${n} pasajero${n === 1 ? '' : 's'} confirmado${n === 1 ? '' : 's'}`,
+      texto: `Te queda${libres === 1 ? '' : 'n'} ${libres} lugar${libres === 1 ? '' : 'es'} libre${libres === 1 ? '' : 's'}.`,
+    }
+  }
+  return { icono: CarFront, titulo: 'Viaje publicado', texto: 'Te avisamos cuando alguien pida lugar.' }
+}
 
 /** Detalle del viaje, vista de conductor ({ viajeId }). */
 export function DriverDetailPage({ navigate, params }) {
@@ -66,13 +97,15 @@ export function DriverDetailPage({ navigate, params }) {
   const confirmados = viaje?.reservas.filter((r) => ['confirmada', 'completada'].includes(r.estado)) || []
   const otras = viaje?.reservas.filter((r) => !['solicitada', 'confirmada', 'completada'].includes(r.estado)) || []
   const cancelable = viaje && ['abierto', 'lleno'].includes(viaje.estado)
+  const paso = viaje && siguientePaso(viaje, pendientes, confirmados)
+  const IconoPaso = paso?.icono
 
   return (
     <PhoneFrame className="app-screen">
       <DetailHeader
         subtitle="Vista de conductor"
         status={viaje && ESTADO_VIAJE[viaje.estado]}
-        statusActivo={viaje && esEstadoActivo(viaje.estado)}
+        statusTono={viaje && tonoEstado(viaje.estado)}
         onBack={() => navigate(PAGES.HISTORY)}
       />
       {cargando && <Loading />}
@@ -80,6 +113,14 @@ export function DriverDetailPage({ navigate, params }) {
 
       {viaje && (
         <>
+          <div className={`next-step ${paso.tono ? `next-step--${paso.tono}` : ''}`}>
+            <IconoPaso size={20} />
+            <div>
+              <b>{paso.titulo}</b>
+              <p>{paso.texto}</p>
+            </div>
+          </div>
+
           <TripMap
             polilinea={viaje.ruta.polilinea}
             etiqueta={`${viaje.ruta.distancia_km} km · ${viaje.ruta.duracion_min} min`}
@@ -91,6 +132,7 @@ export function DriverDetailPage({ navigate, params }) {
                 .filter((r) => r.punto_abordaje)
                 .map((r) => ({ ...r.punto_abordaje, tipo: 'abordaje', etiqueta: r.pasajero.nombre_visible.split(' ')[0] })),
             ]}
+            leyenda={pendientes.length || confirmados.length ? ['origen', 'destino', 'recogida', 'abordaje'] : undefined}
           />
 
           <ErrorBanner error={accionError} className="mt-4" />
@@ -171,9 +213,6 @@ export function DriverDetailPage({ navigate, params }) {
                   {otras.map((r) => `${r.pasajero.nombre_visible.split(' ')[0]} (${ESTADO_RESERVA[r.estado].toLowerCase()})`).join(', ')}
                 </small>
               )}
-              {viaje.estado === 'cancelado' && (
-                <small>Cancelado{viaje.motivo_cancelacion ? `: ${viaje.motivo_cancelacion}` : ''}</small>
-              )}
             </footer>
           </section>
 
@@ -184,9 +223,9 @@ export function DriverDetailPage({ navigate, params }) {
               <Copy size={16} className="mr-2 inline" /> Publicar de nuevo
             </PrimaryButton>
             {cancelable && (
-              <PrimaryButton variante="peligro" onClick={() => setModal('cancelar')}>
-                Cancelar viaje
-              </PrimaryButton>
+              <button type="button" className="danger-link" onClick={() => setModal('cancelar')}>
+                Cancelar este viaje
+              </button>
             )}
           </div>
         </>

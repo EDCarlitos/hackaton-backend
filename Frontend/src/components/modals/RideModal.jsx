@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Check, Footprints } from 'lucide-react'
 import { api } from '../../lib/api'
-import { ESTADO_RESERVA, formatDia, formatMetros } from '../../lib/format'
+import { ESTADO_RESERVA, formatDia, formatHora, formatMetros } from '../../lib/format'
 import { MapLegend, RouteMap } from '../map/RouteMap'
 import { TripInfo } from '../trip/TripInfo'
 import { ErrorBanner } from '../ui/Feedback'
@@ -40,9 +40,13 @@ export function RideModal({ resultado, recogida, bajada, onReservado, onVerReser
 
   return (
     <Modal onClose={onClose}>
-      <ModalHeader eyebrow="Viaje compatible" title={formatDia(resultado.salida_en)} onClose={onClose} />
+      <ModalHeader
+        eyebrow={`Pasa cerca de ti · ${resultado.conductor.nombre_visible}`}
+        title={`${formatDia(resultado.salida_en)} a las ${formatHora(resultado.salida_en)}`}
+        onClose={onClose}
+      />
       <div className="relative">
-        <RouteMap polilinea={resultado.ruta.polilinea} marcadores={marcadores} alto={190} />
+        <RouteMap polilinea={resultado.ruta.polilinea} marcadores={marcadores} alto={270} />
         <span className="trip-map__pill">
           <Footprints size={16} /> {formatMetros(resultado.distancia_pie_m)} a pie hasta la ruta
         </span>
@@ -75,7 +79,7 @@ export function RideModal({ resultado, recogida, bajada, onReservado, onVerReser
         </div>
       ) : (
         <PrimaryButton className="mt-5" onClick={solicitar} disabled={enviando}>
-          {enviando ? 'Enviando…' : 'Solicitar 1 asiento'}
+          {enviando ? 'Enviando…' : 'Pedir un lugar'}
         </PrimaryButton>
       )}
       <p className="mt-3 text-center text-[11px] text-muted">
