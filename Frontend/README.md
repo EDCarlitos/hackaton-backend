@@ -53,7 +53,7 @@ El diseño sale de Figma (archivo `rutacaribe`): Login, Inicio, Detalle del viaj
 - `lib/api.js`: único cliente HTTP (token, `ApiError` con `codigo`/`mensaje`/`detalles`, cierre de sesión con 401).
 - `context/AuthContext.jsx`: sesión (`useAuth`).
 - `hooks/useAsync.js`: datos del API con recarga y polling. `hooks/useChat.js`: chat con polling cada 4 s.
-- `components/map/RouteMap.jsx`: Google Maps si hay llave; si no, esquema SVG. `components/forms/PointPicker.jsx`: elegir un punto (lista, mi ubicación o tocar el mapa).
+- `components/map/RouteMap.jsx`: Google Maps si hay llave; si no, esquema SVG. **Reutiliza las instancias de mapa** (pool): Google cobra cada `new google.maps.Map`, no los re-renders, así que en una sesión normal se crea 1 mapa aunque se abran muchos detalles. En desarrollo, `window.__mapasCreados` dice cuántos se han creado. `components/forms/PointPicker.jsx`: elegir un punto (lista, mi ubicación o tocar el mapa).
 - `assets/figma/`: SVG exportados de Figma (marcador de ruta, asientos, reloj). El resto de los íconos son de `lucide-react`, igual que en el diseño.
 - `lib/format.js`: fechas, distancias y etiquetas de estado. `lib/geo.js`: polilíneas y lugares de Cancún.
 
