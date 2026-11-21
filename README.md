@@ -115,12 +115,14 @@ Para tener muchos datos (56 conductores, 3 días de viajes): `cd Backend && npm 
 ├── CLAUDE.md                   # notas rápidas del monorepo para agentes
 ├── diagramas/                  # PNG listos para presentar
 │   ├── arquitectura.png
-│   └── entidad-relacion.png
+│   ├── entidad-relacion.png
+│   └── schemas-multitenant.png # captura: 5 schemas en la base yendo_copia
 ├── docs/                       # fuentes de los diagramas
 │   ├── arquitectura.svg
 │   ├── entidad-relacion.svg
 │   ├── entidad-relacion.py     # genera el SVG del modelo E-R
-│   └── procesos/*.mmd          # diagramas de procesos (Mermaid)
+│   ├── procesos/*.mmd          # diagramas de procesos (Mermaid)
+│   └── consulta_schemas.sql    # lista los schemas con su institución y datos
 │
 ├── Backend/                    # API: Node.js 24 + Express 5 + PostgreSQL 16
 │   ├── CLAUDE.md               # reglas detalladas del backend (léelo antes de cambiar algo)
@@ -323,6 +325,38 @@ withTenant(schema, async (db) => {
 
 - `POST /instituciones` con el header `X-Admin-Key`. En **una sola transacción** inserta la institución y sus dominios, crea el schema y le aplica todas las migraciones de `src/db/tenant/`. Si algo falla, no queda nada a medias.
 - El runner (`src/db/migrate.js`) aplica los `.sql` en orden, cada uno en su transacción, y los registra en `public.schema_migrations` o `<schema>.schema_migrations`. Las migraciones de tenant se corren sobre **todos** los schemas existentes. Una migración ya aplicada **no se edita**: se crea una nueva.
+
+### Ejemplo real: cuatro instituciones en una sola base
+
+Para demostrarlo copiamos la base de desarrollo (`hackaton`, con los datos demo) a una base **aparte**, `yendo_copia`, en el mismo servidor PostgreSQL. Ahí dimos de alta tres instituciones más con el mismo service que usa `POST /instituciones`. La base original no se tocó.
+
+| Schema | Institución | Dominios |
+|---|---|---|
+| `public` | Catálogo global (instituciones y dominios) | — |
+| `ucaribe` | Universidad del Caribe | `ucaribe.edu.mx` |
+| `upqroo` | Universidad Politécnica de Quintana Roo | `upqroo.edu.mx` |
+| `uqroo` | Universidad Autónoma del Estado de Quintana Roo | `uqroo.edu.mx`, `uqroo.mx` |
+| `itcancun` | Tecnológico Nacional de México, campus Cancún | `cancun.tecnm.mx` |
+
+En total hay **5 schemas: 1 global y 4 instituciones**. Cada institución tiene las mismas **8 tablas** y sus **10 migraciones** aplicadas, pero datos separados: `ucaribe` tiene 69 usuarios y 672 viajes, y las nuevas empiezan vacías. Alguien con correo `@upqroo.edu.mx` solo puede registrarse y operar dentro de `upqroo`.
+
+![Schemas de la base yendo_copia](diagramas/schemas-multitenant.png)
+
+Para reproducirlo (la consulta está en [`docs/consulta_schemas.sql`](docs/consulta_schemas.sql)):
+
+```bash
+# 1. Copia aislada de la base (la original no cambia)
+docker exec hackaton-postgres sh -c 'createdb -U hackaton yendo_copia && pg_dump -U hackaton -d hackaton | psql -q -U hackaton -d yendo_copia'
+
+# 2. Alta de una institución: crea su schema y le aplica las migraciones en una transacción
+curl -X POST http://localhost:3000/instituciones \
+  -H "X-Admin-Key: $PLATFORM_ADMIN_KEY" -H "Content-Type: application/json" \
+  -d '{"nombre":"Universidad Politécnica de Quintana Roo","schema_nombre":"upqroo","dominios":["upqroo.edu.mx"]}'
+# (contra la copia: arranca la API con POSTGRES_DB=yendo_copia)
+
+# 3. Ver los schemas
+docker exec -i hackaton-postgres psql -U hackaton -d yendo_copia < docs/consulta_schemas.sql
+```
 
 ---
 
@@ -825,6 +859,7 @@ cd Frontend && npx eslint . && npx vite build       # lint y build
 |---|---|
 | [`diagramas/arquitectura.png`](diagramas/arquitectura.png) · [`docs/arquitectura.svg`](docs/arquitectura.svg) | Arquitectura de servicios (Compose, API, PostgreSQL y Google Maps) |
 | [`diagramas/entidad-relacion.png`](diagramas/entidad-relacion.png) · [`docs/entidad-relacion.svg`](docs/entidad-relacion.svg) | Modelo entidad-relación (public + schema por institución) |
+| [`diagramas/schemas-multitenant.png`](diagramas/schemas-multitenant.png) · [`docs/consulta_schemas.sql`](docs/consulta_schemas.sql) | Captura de los 5 schemas (public + 4 instituciones) en la base `yendo_copia` |
 | [`docs/procesos/`](docs/procesos) | Diagramas de procesos en Mermaid: general, acceso, publicar, buscar y solicitar, responder, cancelar, cierre y estados |
 | [`Backend/CLAUDE.md`](Backend/CLAUDE.md) | Reglas detalladas del backend: endpoints por RF, errores, tests |
 | [`Frontend/README.md`](Frontend/README.md) | Cómo correr el frontend y pantallas ↔ requisitos |
