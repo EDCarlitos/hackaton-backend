@@ -4,7 +4,8 @@
 //   npm run demo:datos -- --limpiar BORRA todo lo de la institución ucaribe y vuelve a llenarla
 //
 // Qué crea (contraseña de todos: secreta123):
-//   - Conductores con vehículo y 2 viajes redondos por día (casa → UCaribe → casa, dos veces)
+//   - Conductores con vehículo y 2 viajes redondos por día (casa → UCaribe → casa, dos veces),
+//     muchos de ellos pasando por el Centro (ver POR_EL_CENTRO),
 //     durante los próximos 3 días. Los horarios se escalonan 15 min entre conductores, así que
 //     de 6:30 a 19:45 siempre hay alguien saliendo: "Conductores disponibles" no se ve vacío.
 //   - Usuarios que solo registraron su vehículo (sin viajes).
@@ -22,7 +23,7 @@ const API = process.env.DEMO_API_URL || `http://localhost:${process.env.PORT || 
 const SCHEMA = 'ucaribe';
 const DOMINIO = 'ucaribe.edu.mx';
 const PASSWORD = 'secreta123';
-const DIAS = 3; // mañana y los 2 siguientes (si ya es tarde, "hoy" no tiene sentido)
+const DIAS = 3; // hoy y los 2 siguientes; los horarios de hoy que ya pasaron se saltan
 const ZONA = '-05:00'; // Cancún, sin horario de verano
 
 // Mismos lugares que el frontend (Frontend/src/lib/geo.js).
@@ -78,6 +79,21 @@ for (let i = 0; i < 24; i += 1) {
   CONDUCTORES.push([`${usuario}${i}`, nombre, `${auto} ${COLORES[i % COLORES.length]} · ${placa}`, asientos, CASAS[i % CASAS.length], costo]);
 }
 
+// 16 conductores más que salen de los 4 lugares cuyas rutas a UCaribe pasan por el Centro
+// (Av. Tulum, 21.1716, -86.8228): desde ahí, un pasajero encuentra a ~33 conductores en el día.
+// Se calculó con las rutas reales guardadas; tampoco cuestan llamadas a Google.
+const POR_EL_CENTRO = ['sm200', 'm28', 'americas', 'tajamar'];
+const NOMBRES_CENTRO = ['Adriana', 'Bruno', 'Carmen', 'Daniel', 'Elena', 'Felipe', 'Gloria', 'Hugo'];
+const APELLIDOS_CENTRO = ['Ac', 'Batún', 'Cetina', 'Dzul', 'Euán', 'Góngora'];
+for (let i = 0; i < 16; i += 1) {
+  const nombre = `${NOMBRES_CENTRO[i % NOMBRES_CENTRO.length]} ${APELLIDOS_CENTRO[(i * 5) % APELLIDOS_CENTRO.length]}`;
+  const [auto, asientos] = AUTOS[(i + 3) % AUTOS.length];
+  const placa = `UC${String.fromCharCode(65 + i)}-${String(300 + i * 23).slice(-3)}-${String.fromCharCode(80 + (i % 10))}`;
+  const usuario = nombre.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().replace(' ', '.');
+  const costo = [15, 20, null, 25][i % 4];
+  CONDUCTORES.push([`${usuario}.c${i}`, nombre, `${auto} ${COLORES[(i + 2) % COLORES.length]} · ${placa}`, asientos, POR_EL_CENTRO[i % 4], costo]);
+}
+
 // Horarios del conductor i: ida a las 6:30 + 15 min × i; regresa 4:30 h después, vuelve a ir
 // 1:30 h más tarde y regresa 3:30 h después (de 6:30 a ~20:00 siempre sale alguien).
 function horarios(i) {
@@ -124,12 +140,20 @@ const registrar = (usuario, nombre) =>
     body: { correo: `${usuario}@${DOMINIO}`, password: PASSWORD, nombre_visible: nombre, acepto_terminos: true },
   });
 
-// "2026-11-21T07:00:00-05:00": día `d` a partir de mañana, a la hora HH:MM de Cancún.
+// "2026-11-21T07:00:00-05:00": día `d` a partir de hoy, a la hora HH:MM de Cancún.
 function salida(d, hhmm) {
-  const fecha = new Date(Date.now() + (d + 1) * 86_400_000 - 5 * 3_600_000) // fecha de Cancún
+  const fecha = new Date(Date.now() + d * 86_400_000 - 5 * 3_600_000) // fecha de Cancún
     .toISOString()
     .slice(0, 10);
   return `${fecha}T${hhmm}:00${ZONA}`;
+}
+
+// Las salidas de los próximos DIAS días a esas horas, sin las que ya pasaron (la API no las acepta).
+function salidasFuturas(horas) {
+  const minimo = Date.now() + 10 * 60_000;
+  const todas = [];
+  for (let d = 0; d < DIAS; d += 1) for (const h of horas) todas.push(salida(d, h));
+  return todas.filter((iso) => new Date(iso).getTime() > minimo);
 }
 
 async function limpiar() {
@@ -174,12 +198,13 @@ async function main() {
       ['ucaribe', casa, vuelta],
     ]) {
       const clave = `${desde}→${hasta}`;
+      const [primeraSalida, ...otras] = salidasFuturas([hhmm, hhmm2]);
       let primero;
       if (rutas.has(clave)) {
         primero = await copiarViaje(rutas.get(clave), {
           conductorId: u.id,
           vehiculoId: vehiculo.id,
-          salidaEn: salida(0, hhmm),
+          salidaEn: primeraSalida,
           asientos: lugares,
           costo,
         });
@@ -190,7 +215,7 @@ async function main() {
             vehiculo_id: vehiculo.id,
             origen: LUGARES[desde],
             destino: LUGARES[hasta],
-            salida_en: salida(0, hhmm),
+            salida_en: primeraSalida,
             asientos_ofrecidos: lugares,
             costo_referencia: costo ?? undefined,
           },
@@ -200,12 +225,10 @@ async function main() {
         consultasGoogle += 1;
       }
       viajes += 1;
-      // El segundo viaje del día y los días siguientes: "Publicar de nuevo" (API), sin Google.
-      for (let d = 0; d < DIAS; d += 1) {
-        for (const h of d === 0 ? [hhmm2] : [hhmm, hhmm2]) {
-          await api('POST', `/viajes/${primero}/republicar`, { token, body: { salida_en: salida(d, h) } });
-          viajes += 1;
-        }
+      // Los demás horarios y días: "Publicar de nuevo" (API), sin Google.
+      for (const salidaEn of otras) {
+        await api('POST', `/viajes/${primero}/republicar`, { token, body: { salida_en: salidaEn } });
+        viajes += 1;
       }
     }
     console.log(`  conductor ${nombre} (${LUGARES[casa].texto})`);

@@ -32,6 +32,8 @@ export function decodificarPolilinea(texto = '') {
 export const LUGARES = [
   { id: 'ucaribe', texto: 'Universidad del Caribe', lat: 21.2004, lng: -86.8226 },
   { id: 'kabah', texto: 'Plaza Cancún 2000 (Av. Kabah)', lat: 21.1762, lng: -86.8492 },
+  // Por aquí pasan las rutas a UCaribe desde SM 200, Mercado 28, Las Américas y Tajamar (datos demo).
+  { id: 'centro', texto: 'Centro (Av. Tulum)', lat: 21.1716, lng: -86.8228 },
   { id: 'otoch', texto: 'Villas Otoch Paraíso', lat: 21.1826, lng: -86.8678 },
   { id: 'talleres', texto: 'Av. Talleres y Av. Kabah', lat: 21.1801, lng: -86.8592 },
   { id: 'r96', texto: 'Región 96', lat: 21.165, lng: -86.861 },
