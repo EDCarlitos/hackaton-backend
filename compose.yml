@@ -1,0 +1,60 @@
+name: rutacaribe
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hackaton}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rutacaribe-local-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-hackaton}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./Backend
+    volumes:
+      - ./Backend/src:/app/src:ro
+      - ./Backend/public:/app/public:ro
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-hackaton}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rutacaribe-local-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-hackaton}
+      JWT_SECRET: ${JWT_SECRET:-rutacaribe-local-jwt-secret-para-demo}
+      PLATFORM_ADMIN_KEY: ${PLATFORM_ADMIN_KEY:-rutacaribe-local-admin-key}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      MAPS_PROVIDER: ${MAPS_PROVIDER:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  frontend:
+    build: ./Frontend
+    environment:
+      API_PROXY_TARGET: http://backend:3000
+      VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY:-}
+    volumes:
+      - ./Frontend/src:/app/src:ro
+      - ./Frontend/public:/app/public:ro
+      - ./Frontend/index.html:/app/index.html:ro
+      - ./Frontend/vite.config.js:/app/vite.config.js:ro
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
