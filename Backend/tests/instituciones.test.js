@@ -45,7 +45,7 @@ describe('POST /instituciones', () => {
     );
     assert.deepEqual(
       tablas.rows.map((r) => r.table_name),
-      ['mensajes', 'notificaciones', 'reservas', 'schema_migrations', 'trayectos', 'usuarios', 'vehiculos', 'viajes'],
+      ['mensajes', 'notificaciones', 'reservas', 'schema_migrations', 'trayectos', 'ubicaciones_viaje', 'usuarios', 'vehiculos', 'viajes'],
     );
     const migs = await pool.query(`SELECT nombre FROM "${schema}".schema_migrations ORDER BY nombre`);
     const esperadas = fs.readdirSync(path.join(__dirname, '../src/db/tenant')).filter((f) => f.endsWith('.sql')).sort();

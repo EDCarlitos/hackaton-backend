@@ -5,7 +5,16 @@ const { pool, prepararBD, cerrarBD, crearInstitucion, crearUsuario, unico } = re
 before(prepararBD);
 after(cerrarBD);
 
-const TABLAS_TENANT = ['usuarios', 'vehiculos', 'trayectos', 'viajes', 'reservas', 'mensajes', 'notificaciones'];
+const TABLAS_TENANT = [
+  'usuarios',
+  'vehiculos',
+  'trayectos',
+  'viajes',
+  'reservas',
+  'mensajes',
+  'notificaciones',
+  'ubicaciones_viaje',
+];
 
 async function tablasDe(schema) {
   const { rows } = await pool.query(

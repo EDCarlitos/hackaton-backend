@@ -62,7 +62,7 @@ Reglas:
 - Al agregar o cambiar un endpoint, actualiza su contrato en `src/docs/openapi.js`.
 - Archivos con el formato `<modulo>.<capa>.js`. Nombres de módulo en plural y en minúsculas (`users`, `projects`).
 - Si otro módulo necesita trabajar **en la misma transacción**, el service expone una función que recibe `db` (ej. `vehiculos.resolverParaPublicar(db, ...)`, `viajes.guardarEnTransaccion(db, ...)`, `notificaciones.crearEnTransaccion(db, ...)`). Esas funciones no abren `withTenant`.
-- Módulos: `auth`, `instituciones`, `vehiculos`, `viajes`, `trayectos`, `reservas`, `mensajes`, `impacto` y `notificaciones`. Dependencias entre services: `trayectos → viajes → vehiculos, notificaciones` y `reservas → notificaciones`. El job `cierreAutomatico` usa `instituciones` y `viajes`. No debe haber ciclos.
+- Módulos: `auth`, `instituciones`, `vehiculos`, `viajes`, `trayectos`, `reservas`, `mensajes`, `ubicaciones`, `impacto` y `notificaciones`. Dependencias entre services: `trayectos → viajes → vehiculos, notificaciones` y `reservas → notificaciones`. El job `cierreAutomatico` usa `instituciones`, `viajes` y `ubicaciones`. No debe haber ciclos.
 - `mensajes` se monta en `/viajes/:viajeId/mensajes`, con `Router({ mergeParams: true })` y **antes** de `/viajes` en `app.js`.
 
 ## Multi-tenant: un schema por tenant
@@ -155,6 +155,7 @@ Reglas:
 | 23 (chat) | `GET /viajes/:viajeId/mensajes?despues_de=` (polling) y `POST` `{ texto }`. Leen el conductor y los pasajeros confirmados o completados; escriben el conductor y los confirmados si el viaje no está cancelado ni finalizado (409 `CHAT_CERRADO`). A otros, 403 `NO_PARTICIPA` |
 | 23–24 (impacto) | `GET /impacto` → `{ institucion, mio, metodologia }`. Cuenta solo reservas `completada`. CO₂ = km compartidos × 0.249 kg/km (EPA: 400 g/milla). La metodología (fórmula, factor, fuente, supuestos, etiqueta "Estimación") vive en `impacto.service.js` y el frontend la muestra tal cual |
 
+- **Ubicación en vivo** (módulo `ubicaciones`, montado en `/viajes/:viajeId/ubicacion` antes de `/viajes`, migración 010): `PUT` (solo el conductor; viaje activo y dentro de la ventana de 30 min antes de la salida a duración + 60 min; si no, 409 `FUERA_DE_HORARIO` o `VIAJE_NO_ACTIVO`), `GET` (conductor o pasajero **confirmado**; si no, 403 `NO_PARTICIPA`) y `DELETE`. Para cumplir RNF-03 es opcional, solo con la app abierta y **sin historial**: `ubicaciones_viaje` tiene una fila por viaje con la última posición, y el job de cierre (`ubicaciones.limpiarVencidas`) borra las de viajes cerrados, cancelados o con la ventana vencida.
 - Orden de bloqueo en aceptar/rechazar/cancelar: viaje y después reserva (ver arriba).
 - Avisos al pasajero: `reserva_confirmada` y `reserva_rechazada`.
 - CORS: `CORS_ORIGINS` (lista separada por comas) para el frontend desplegado; en dev no hace falta porque Vite usa un proxy (`/api` → `localhost:3000`).

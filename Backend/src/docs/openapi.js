@@ -33,6 +33,7 @@ module.exports = {
     { name: 'Pasajeros', description: 'Buscar viajes compatibles, solicitar asiento y cancelar (RF-12 a RF-15)' },
     { name: 'Reservas', description: 'El conductor acepta o rechaza; ambas partes ven la reserva (RF-16 a RF-22)' },
     { name: 'Chat', description: 'Chat de grupo del viaje (RF-23)' },
+    { name: 'Ubicación en vivo', description: 'El conductor comparte su posición; la ven sus pasajeros confirmados' },
     { name: 'Impacto', description: 'Contador de impacto ambiental con metodología visible (RF-23, RF-24)' },
     { name: 'Notificaciones', description: 'Avisos dentro de la app (cancelaciones, solicitudes, aceptaciones y rechazos)' },
   ],
@@ -703,6 +704,88 @@ module.exports = {
           401: noAutenticado,
           404: errorResponse('No existe o el viaje no es tuyo', ['RESERVA_NO_ENCONTRADA']),
           409: errorResponse('Ya no está pendiente', ['RESERVA_NO_PENDIENTE']),
+        },
+      },
+    },
+    '/viajes/{viajeId}/ubicacion': {
+      get: {
+        tags: ['Ubicación en vivo'],
+        summary: 'Última ubicación del conductor',
+        description:
+          'La ven el conductor y los pasajeros **confirmados**. Fuera de la ventana (de 30 min antes de la salida a ' +
+          'duración + 60 min) o con el viaje cerrado/cancelado, `ubicacion` es null. Pensado para polling cada ~5 s.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'viajeId', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: {
+          200: jsonRespuesta('Ubicación (o null) y ventana', {
+            ubicacion: {
+              type: 'object',
+              nullable: true,
+              properties: {
+                lat: { type: 'number', example: 21.1801 },
+                lng: { type: 'number', example: -86.8592 },
+                precision_m: { type: 'integer', nullable: true, example: 12 },
+                actualizada_en: { type: 'string', format: 'date-time' },
+              },
+            },
+            compartiendo: { type: 'boolean' },
+            ventana: {
+              type: 'object',
+              properties: {
+                desde: { type: 'string', format: 'date-time' },
+                hasta: { type: 'string', format: 'date-time' },
+                abierta: { type: 'boolean' },
+              },
+            },
+          }),
+          401: noAutenticado,
+          403: errorResponse('No es el conductor ni un pasajero confirmado', ['NO_PARTICIPA']),
+          404: errorResponse('No existe', ['VIAJE_NO_ENCONTRADO']),
+        },
+      },
+      put: {
+        tags: ['Ubicación en vivo'],
+        summary: 'El conductor comparte su posición actual',
+        description:
+          'Reemplaza la anterior: se guarda **solo la última** (sin historial, RNF-03). Solo el conductor, con el viaje ' +
+          'activo y dentro de la ventana. El frontend la manda con la app abierta (~cada 10 s); no hay rastreo en segundo plano.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'viajeId', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['lat', 'lng'],
+                properties: {
+                  lat: { type: 'number', example: 21.1801 },
+                  lng: { type: 'number', example: -86.8592 },
+                  precision_m: { type: 'number', description: 'Precisión del GPS en metros (opcional)', example: 12 },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: jsonRespuesta('Ubicación guardada', { ubicacion: { type: 'object' } }),
+          400: errorResponse('Coordenadas o precisión inválidas', ['VALIDACION']),
+          401: noAutenticado,
+          403: errorResponse('No es el conductor del viaje', ['NO_ES_CONDUCTOR']),
+          404: errorResponse('No existe', ['VIAJE_NO_ENCONTRADO']),
+          409: errorResponse('Viaje cerrado o fuera de la ventana para compartir', ['VIAJE_NO_ACTIVO', 'FUERA_DE_HORARIO']),
+        },
+      },
+      delete: {
+        tags: ['Ubicación en vivo'],
+        summary: 'El conductor deja de compartir (se borra la última posición)',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'viajeId', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: {
+          204: { description: 'Borrada' },
+          401: noAutenticado,
+          403: errorResponse('No es el conductor del viaje', ['NO_ES_CONDUCTOR']),
+          404: errorResponse('No existe', ['VIAJE_NO_ENCONTRADO']),
         },
       },
     },

@@ -11,6 +11,7 @@ const trayectosRoutes = require('./modules/trayectos/trayectos.routes');
 const notificacionesRoutes = require('./modules/notificaciones/notificaciones.routes');
 const reservasRoutes = require('./modules/reservas/reservas.routes');
 const mensajesRoutes = require('./modules/mensajes/mensajes.routes');
+const ubicacionesRoutes = require('./modules/ubicaciones/ubicaciones.routes');
 const impactoRoutes = require('./modules/impacto/impacto.routes');
 const { errorHandler, notFound } = require('./shared/middlewares/errorHandler');
 const { cors } = require('./shared/middlewares/cors');
@@ -36,6 +37,7 @@ app.use('/auth', authRoutes);
 app.use('/instituciones', institucionesRoutes);
 app.use('/vehiculos', vehiculosRoutes);
 app.use('/viajes/:viajeId/mensajes', mensajesRoutes); // antes de /viajes
+app.use('/viajes/:viajeId/ubicacion', ubicacionesRoutes); // antes de /viajes
 app.use('/viajes', viajesRoutes);
 app.use('/trayectos', trayectosRoutes);
 app.use('/notificaciones', notificacionesRoutes);
