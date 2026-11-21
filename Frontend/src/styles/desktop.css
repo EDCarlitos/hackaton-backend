@@ -1,0 +1,172 @@
+/*
+ * Versión de escritorio (≥ 1024 px). En celular y tablet no cambia nada: el shell no existe
+ * (display: contents) y la barra lateral está oculta. En escritorio:
+ *   - barra lateral fija (SideNav) en vez de la navegación inferior;
+ *   - contenido centrado con un ancho cómodo de lectura;
+ *   - listas a dos columnas y detalles con el mapa fijo a la derecha.
+ */
+.app-shell {
+  display: contents;
+}
+.side-nav {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .prototype {
+    display: block;
+    padding: 0;
+    background: #fff;
+  }
+  .prototype > * {
+    width: 100%;
+  }
+
+  .app-shell {
+    display: grid;
+    grid-template-columns: 248px minmax(0, 1fr);
+    min-height: 100svh;
+  }
+  .app-shell > div {
+    min-width: 0;
+  }
+
+  /* La pantalla deja de ser un teléfono: ocupa todo y respira. */
+  .phone {
+    width: 100%;
+    min-height: 100svh;
+    box-shadow: none;
+  }
+  .app-screen {
+    padding: 40px 56px 64px;
+  }
+  /* :not(.fixed): los modales (fondo a pantalla completa) también son hijos directos. */
+  .app-screen > :not(.fixed) {
+    width: 100%;
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .bottom-nav,
+  .nav-spacer {
+    display: none;
+  }
+
+  /* --- Barra lateral --- */
+  .side-nav {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    padding: 32px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-right: 1px solid var(--color-line);
+    background: #fff;
+  }
+  .side-nav__brand {
+    margin: 0 12px 28px;
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 30px;
+    font-weight: 600;
+  }
+  .side-nav button {
+    height: 44px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--color-ink);
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    transition:
+      background-color 140ms ease,
+      transform 140ms var(--ease-out);
+  }
+  .side-nav button:active {
+    transform: scale(0.98);
+  }
+  .side-nav button.active {
+    background: var(--color-surface);
+    font-weight: 600;
+  }
+  .side-nav button.active svg {
+    color: var(--color-coral);
+  }
+  .side-nav .side-nav__publish {
+    margin-bottom: 16px;
+    justify-content: center;
+    gap: 8px;
+    background: var(--color-coral);
+    color: #fff;
+    font-weight: 600;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .side-nav button:not(.side-nav__publish):not(.active):hover {
+      background: var(--color-surface);
+    }
+  }
+
+  /* --- Listas a dos columnas (conductores disponibles, mis viajes) --- */
+  .trip-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* --- Detalles: información a la izquierda, mapa fijo a la derecha --- */
+  .app-screen.detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    column-gap: 40px;
+    align-content: start;
+    padding-inline: max(56px, calc((100% - 1120px) / 2));
+  }
+  .app-screen.detail-layout > :not(.fixed) {
+    grid-column: 1;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .app-screen.detail-layout > .detail-header {
+    grid-column: 1 / -1;
+  }
+  .app-screen.detail-layout > .trip-map {
+    grid-column: 2;
+    grid-row: 2 / span 40;
+    position: sticky;
+    top: 40px;
+    align-self: start;
+    margin-top: 20px;
+  }
+  /* El contenedor del mapa trae su alto en línea (celular); en escritorio, más grande. */
+  .detail-layout > .trip-map > .relative > div:first-child {
+    height: min(560px, calc(100svh - 160px)) !important;
+  }
+  .app-screen.detail-layout > .danger-link,
+  .app-screen.detail-layout > .detail-actions {
+    justify-self: stretch;
+  }
+
+  /* --- Formularios angostos (publicar, impacto) --- */
+  .app-screen.narrow-layout > :not(.fixed) {
+    max-width: 620px;
+  }
+
+  /* --- Login: tarjeta centrada --- */
+  .login-content,
+  .account {
+    width: 100%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* --- Modales: un poco más anchos, siempre centrados --- */
+  .modal-sheet {
+    max-width: 460px !important;
+  }
+}

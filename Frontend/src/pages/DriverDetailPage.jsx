@@ -102,7 +102,7 @@ export function DriverDetailPage({ navigate, params }) {
   const IconoPaso = paso?.icono
 
   return (
-    <PhoneFrame className="app-screen">
+    <PhoneFrame className="app-screen detail-layout">
       <DetailHeader
         subtitle="Vista de conductor"
         status={viaje && ESTADO_VIAJE[viaje.estado]}

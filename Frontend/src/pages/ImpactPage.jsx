@@ -19,7 +19,7 @@ export function ImpactPage({ navigate }) {
   const metodo = data?.metodologia
 
   return (
-    <PhoneFrame className="app-screen">
+    <PhoneFrame className="app-screen narrow-layout">
       <DetailHeader
         title="Tu impacto"
         subtitle="Lo que ahorramos al compartir el auto"

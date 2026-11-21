@@ -1,5 +1,6 @@
 import { ScreenTransition } from './components/layout/ScreenTransition'
 import { PhoneFrame } from './components/layout/PhoneFrame'
+import { SideNav } from './components/layout/SideNav'
 import { Loading } from './components/ui/Feedback'
 import { PAGES } from './constants/pages'
 import { useAuth } from './context/AuthContext'
@@ -45,10 +46,14 @@ function Pantallas() {
   // La clave incluye los parámetros: abrir otro viaje reinicia el estado de la pantalla.
   const clave = `${page}-${params.viajeId ?? ''}`
 
+  // En escritorio, la barra lateral queda fija fuera de la transición (no parpadea al navegar).
   return (
-    <ScreenTransition screenKey={clave}>
-      <Screen navigate={navigate} params={params} />
-    </ScreenTransition>
+    <div className="app-shell">
+      <SideNav page={page} navigate={navigate} />
+      <ScreenTransition screenKey={clave}>
+        <Screen navigate={navigate} params={params} />
+      </ScreenTransition>
+    </div>
   )
 }
 

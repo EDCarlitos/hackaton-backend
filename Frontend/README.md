@@ -48,6 +48,8 @@ El diseño sale de Figma (archivo `rutacaribe`): Login, Inicio, Detalle del viaj
 | Perfil | `modals/ProfileModal.jsx` | RF-03, RNF-04 (aviso de privacidad) |
 | Notificaciones | `modals/NotificationsModal.jsx` | Avisos de RF-11, RF-16, RF-21 |
 
+**Escritorio (≥ 1024 px):** barra lateral fija (`layout/SideNav.jsx`, montada una vez en `App.jsx`), contenido centrado, listas a dos columnas y detalles con el mapa fijo a la derecha. Todo vive en `styles/desktop.css`; en celular y tablet nada cambia.
+
 ## Estructura
 
 - `lib/api.js`: único cliente HTTP (token, `ApiError` con `codigo`/`mensaje`/`detalles`, cierre de sesión con 401).

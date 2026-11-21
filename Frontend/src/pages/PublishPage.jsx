@@ -30,7 +30,7 @@ export function PublishPage({ navigate }) {
   const abrirViaje = (viaje) => navigate(PAGES.DRIVER_DETAIL, { viajeId: viaje.id })
 
   return (
-    <PhoneFrame className="app-screen">
+    <PhoneFrame className="app-screen narrow-layout">
       <DetailHeader title="Publicar viaje" subtitle="Comparte el trayecto que ya haces." onBack={() => navigate(PAGES.HOME)} />
 
       {vehiculos.cargando && <Loading />}

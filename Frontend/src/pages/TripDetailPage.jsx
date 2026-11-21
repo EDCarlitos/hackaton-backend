@@ -90,7 +90,7 @@ export function TripDetailPage({ navigate, params }) {
   }
 
   return (
-    <PhoneFrame className="app-screen">
+    <PhoneFrame className="app-screen detail-layout">
       <DetailHeader
         subtitle={viaje ? (viaje.estado === 'en_curso' ? 'Viaje actual' : formatDiaHora(viaje.salida_en)) : 'Cargando…'}
         status={estado?.texto}
