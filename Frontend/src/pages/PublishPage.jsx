@@ -33,7 +33,7 @@ export function PublishPage({ navigate }) {
       <ErrorBanner error={vehiculos.error} className="mt-4" />
 
       {vehiculos.data && !activos.length && (
-        <section className="mt-6 grid gap-3">
+        <section className="mt-6 grid grid-cols-1 gap-3">
           <h2 className="text-lg font-semibold">Primero, registra tu vehículo</h2>
           <p className="text-sm text-muted">Placa o descripción y cuántos asientos ofreces. No se verifican en el MVP.</p>
           <VehicleForm onCreado={vehiculos.reload} />
@@ -129,9 +129,9 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
   if (revisando) {
     // Resumen obligatorio antes de publicar (caso límite 7.4: hora equivocada).
     return (
-      <section className="mt-6 grid gap-4">
+      <section className="mt-6 grid grid-cols-1 gap-4">
         <h2 className="text-lg font-semibold">Revisa antes de publicar</h2>
-        <div className="grid gap-3 rounded-[20px] border border-line p-4 text-sm">
+        <div className="grid grid-cols-1 gap-3 rounded-[20px] border border-line p-4 text-sm">
           <p className="flex items-center gap-2 font-semibold">
             <CalendarClock size={18} /> {formatDiaHora(new Date(salida))}
           </p>
@@ -155,7 +155,7 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
 
   return (
     <form
-      className="mt-6 grid gap-4"
+      className="mt-6 grid grid-cols-1 gap-4"
       onSubmit={(e) => {
         e.preventDefault()
         if (listo) setRevisando(true)
@@ -250,7 +250,7 @@ function SalgoHoy({ trayectos, onPublicado }) {
   if (elegido) return <ResumenSalgoHoy trayecto={elegido} onVolver={() => setElegido(null)} onPublicado={onPublicado} />
 
   return (
-    <section className="mt-6 grid gap-3">
+    <section className="mt-6 grid grid-cols-1 gap-3">
       {trayectos.cargando && <Loading />}
       <ErrorBanner error={trayectos.error || error} />
       {trayectos.data && !trayectos.data.trayectos.length && (
@@ -310,7 +310,7 @@ function ResumenSalgoHoy({ trayecto, onVolver, onPublicado }) {
 
   const b = borrador.data?.borrador
   return (
-    <section className="mt-6 grid gap-4">
+    <section className="mt-6 grid grid-cols-1 gap-4">
       <h2 className="text-lg font-semibold">{trayecto.nombre}</h2>
       <RouteMap
         polilinea={trayecto.ruta.polilinea}
@@ -338,7 +338,7 @@ function ResumenSalgoHoy({ trayecto, onVolver, onPublicado }) {
       </div>
       <ErrorBanner error={borrador.error || error} />
       {b && !borrador.error && (
-        <div className="grid gap-2 rounded-[20px] border border-line p-4 text-sm">
+        <div className="grid grid-cols-1 gap-2 rounded-[20px] border border-line p-4 text-sm">
           <p className="flex items-center gap-2 font-semibold">
             <CalendarClock size={18} /> {formatDiaHora(b.salida_en)}
           </p>

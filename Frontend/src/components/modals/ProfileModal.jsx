@@ -53,7 +53,7 @@ export function ProfileModal({ onVerImpacto, onClose }) {
       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
         <CarFront size={16} /> Mis vehículos
       </h3>
-      <div className="grid gap-2">
+      <div className="grid grid-cols-1 gap-2">
         {vehiculos.data?.vehiculos
           .filter((v) => v.activo)
           .map((v) => (
@@ -120,7 +120,7 @@ export function VehicleForm({ onCreado, compacto = false }) {
   }
 
   return (
-    <form onSubmit={crear} className="grid gap-2 rounded-xl border border-line p-3">
+    <form onSubmit={crear} className="grid grid-cols-1 gap-2 rounded-xl border border-line p-3">
       <label className="text-sm font-medium">
         Placa o descripción
         <input

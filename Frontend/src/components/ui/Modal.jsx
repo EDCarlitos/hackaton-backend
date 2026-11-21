@@ -14,7 +14,7 @@ export function Modal({ children, onClose }) {
       onMouseDown={onClose}
     >
       <motion.section
-        className="max-h-[92svh] w-full max-w-[382px] overflow-auto rounded-[22px] bg-white p-5 shadow-2xl"
+        className="max-h-[92svh] w-full max-w-[382px] min-w-0 overflow-y-auto overscroll-contain rounded-[22px] bg-white p-5 shadow-2xl"
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 30, opacity: 0 }}

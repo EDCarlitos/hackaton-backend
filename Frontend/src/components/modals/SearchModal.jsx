@@ -14,7 +14,7 @@ export function SearchModal({ inicial, onBuscar, onClose }) {
     <Modal onClose={onClose}>
       <ModalHeader title="¿A dónde vas?" onClose={onClose} />
       <form
-        className="grid gap-4"
+        className="grid grid-cols-1 gap-4"
         onSubmit={(e) => {
           e.preventDefault()
           if (recogida) onBuscar({ recogida, bajada, cuando })

@@ -51,13 +51,13 @@ export function PointPicker({ label, value, onChange, placeholder = 'Elige un lu
   const seleccionado = LUGARES.find((l) => value && l.lat === value.lat && l.lng === value.lng)
 
   return (
-    <div className="grid gap-2">
+    <div className="grid min-w-0 grid-cols-1 gap-2">
       <span className="text-sm font-medium">
         {label} {opcional && <span className="font-normal text-muted">(opcional)</span>}
       </span>
-      <div className="flex gap-2">
+      <div className="flex min-w-0 gap-2">
         <select
-          className="h-11 min-w-0 flex-1 rounded-xl border border-line bg-white px-3 text-sm outline-none"
+          className="h-11 w-0 min-w-0 flex-1 truncate rounded-xl border border-line bg-white px-3 text-sm outline-none"
           value={seleccionado?.id || ''}
           onChange={(e) => elegirLugar(e.target.value)}
         >
@@ -81,8 +81,9 @@ export function PointPicker({ label, value, onChange, placeholder = 'Elige un lu
         )}
       </div>
       {value && (
-        <p className="flex items-center gap-1 text-xs text-muted">
-          <MapPin size={13} /> {value.texto} · {value.lat.toFixed(4)}, {value.lng.toFixed(4)}
+        <p className="flex min-w-0 items-center gap-1 text-xs text-muted">
+          <MapPin size={13} className="shrink-0" />
+          <span className="truncate">{value.texto}</span> · {value.lat.toFixed(4)}, {value.lng.toFixed(4)}
         </p>
       )}
       {errorUbicacion && <p className="text-xs text-coral">{errorUbicacion}</p>}

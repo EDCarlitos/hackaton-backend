@@ -25,4 +25,4 @@ export function Empty({ children }) {
 }
 
 /** Clases comunes para inputs de formulario. */
-export const inputClass = 'mt-2 h-11 w-full rounded-xl border border-line bg-white px-3 text-sm font-normal outline-none'
+export const inputClass = 'mt-2 block h-11 w-full min-w-0 rounded-xl border border-line bg-white px-3 text-sm font-normal outline-none'

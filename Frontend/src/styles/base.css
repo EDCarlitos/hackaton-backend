@@ -1,25 +1,27 @@
-/* Reset mínimo, marco del prototipo y contenedor de teléfono. */
-* {
-  box-sizing: border-box;
-}
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-}
-button {
-  cursor: pointer;
-}
-h1,
-h2,
-h3,
-p {
-  margin: 0;
-}
-h1 {
-  font-family: var(--font-display);
+/* Reset mínimo en @layer base: así las utilidades de Tailwind (text-sm, etc.) siguen ganando. */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+  h1 {
+    font-family: var(--font-display);
+  }
 }
 
 .prototype {
@@ -31,9 +33,13 @@ h1 {
   color: var(--color-ink);
   font-family: var(--font-body);
 }
-/* overflow: clip (no hidden) para que la navegación inferior pueda ser sticky. */
+/* El hijo directo es el contenedor animado de ScreenTransition: sin ancho fijo se encoge al contenido. */
+.prototype > * {
+  width: min(430px, 100%);
+}
 .phone {
-  width: 430px;
+  /* overflow: clip (no hidden) para que la navegación inferior pueda ser sticky. */
+  width: 100%;
   min-height: 932px;
   overflow: clip;
   position: relative;
@@ -53,7 +59,6 @@ h1 {
     align-items: start;
   }
   .phone {
-    width: 100%;
     min-height: 100svh;
     box-shadow: none;
   }

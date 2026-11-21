@@ -66,7 +66,7 @@ export function ImpactPage({ navigate }) {
       )}
 
       {metodo && (
-        <section className="mt-6 grid gap-3 rounded-[20px] border border-line p-4 text-sm">
+        <section className="mt-6 grid grid-cols-1 gap-3 rounded-[20px] border border-line p-4 text-sm">
           <h2 className="flex items-center justify-between text-base font-semibold">
             ¿Cómo se calcula? <StatusChip activo={false}>Estimación</StatusChip>
           </h2>

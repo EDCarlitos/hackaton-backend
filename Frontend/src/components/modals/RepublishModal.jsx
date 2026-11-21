@@ -55,7 +55,7 @@ export function RepublishModal({ viaje, onPublicado, onClose }) {
       </label>
       <ErrorBanner error={error} className="mt-3" />
       {confirmando ? (
-        <div className="mt-4 grid gap-2">
+        <div className="mt-4 grid grid-cols-1 gap-2">
           <p className="rounded-xl bg-coral/10 p-3 text-sm">
             ¿Publicar para el <b>{new Date(salida).toLocaleString('es-MX', { dateStyle: 'full', timeStyle: 'short' })}</b>?
           </p>
