@@ -34,9 +34,6 @@ export function LoginPage() {
       <section className="login-content">
         <span className="coral-mark" />
         <h1>{registro ? 'Crea tu cuenta' : 'Bienvenido'}</h1>
-        <p className="login-lead">
-          RutaCaribe: comparte el trayecto que ya haces. Solo con tu correo institucional.
-        </p>
         <LoginForm key={modo} modo={modo} onSubmit={enviar} />
         {import.meta.env.DEV && !registro && (
           <div className="demo-accounts">

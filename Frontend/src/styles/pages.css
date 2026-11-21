@@ -2,44 +2,37 @@
 
 /* --- Login --- */
 .login-screen {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 32px;
-  padding: 64px 32px 48px;
+  padding: 93px 32px 0;
 }
 .login-content {
   width: 100%;
-}
-.login-lead {
-  margin: -24px 0 28px;
-  font-size: 14px;
-  color: var(--color-muted);
+  margin-block: auto;
 }
 .coral-mark {
   display: block;
   width: 40px;
   height: 6px;
+  margin: 0 0 23px -3px;
   border-radius: 3px;
   background: var(--color-coral);
-  margin-left: -3px;
-  margin-bottom: 17px;
 }
 .login-content h1 {
-  font-size: 44px;
-  line-height: 50px;
-  letter-spacing: -1.76px;
-  margin-bottom: 36px;
+  margin-bottom: 40px;
+  font-size: 48px;
+  line-height: 53px;
+  font-weight: 600;
+  letter-spacing: -1.92px;
 }
 .login-content form {
   display: grid;
   gap: 24px;
 }
 .login-content label {
-  font-size: 14px;
-  font-weight: 500;
   display: grid;
   gap: 10px;
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 500;
 }
 .input {
   height: 58px;
@@ -49,16 +42,25 @@
   gap: 12px;
   border: 1px solid #19171630;
   border-radius: 12px;
+  background: #fff;
+  font-weight: 400;
+}
+.input:focus-within {
+  border-color: var(--color-ink);
 }
 .input svg {
   flex: none;
 }
 .input input {
   min-width: 0;
+  flex: 1;
   border: 0;
   outline: 0;
   font-size: 15px;
-  flex: 1;
+  line-height: 23px;
+}
+.input input::placeholder {
+  color: #19171680;
 }
 .input button {
   padding: 0;
@@ -72,52 +74,47 @@
   border: 0;
   background: none;
   font-size: 13px;
+  line-height: 20px;
   font-weight: 500;
 }
-.primary:disabled {
-  opacity: 0.6;
+.forgot-help {
+  margin-top: -12px;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--color-muted);
+  text-align: right;
 }
 .primary {
   height: 58px;
   border: 0;
   border-radius: 12px;
   background: var(--color-coral);
-  color: white;
-  font-weight: 600;
+  color: #fff;
   font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+  transition: transform 0.16s ease-out;
+}
+.primary:active {
+  transform: scale(0.98);
+}
+.primary:disabled {
+  opacity: 0.6;
 }
 .account {
+  padding: 24px 0 72px;
   text-align: center;
-  color: var(--color-muted);
   font-size: 14px;
+  line-height: 21px;
+  color: #191716a6;
 }
 .account button {
-  color: var(--color-ink);
+  padding: 0;
   border: 0;
   background: none;
-  padding: 0;
+  color: var(--color-ink);
   font-weight: 600;
   text-decoration: underline;
-}
-.home-indicator {
-  position: absolute;
-  bottom: 14px;
-  left: 143px;
-  height: 5px;
-  width: 144px;
-  background: var(--color-ink);
-  border-radius: 3px;
-}
-
-
-/* --- Detalle --- */
-.detail-screen {
-  padding-top: 36px;
-}
-
-/* --- Historial --- */
-.history-screen section {
-  margin-top: 26px;
 }
 
 /* --- Registro: términos (RF-02, RNF-10) --- */
@@ -151,4 +148,16 @@
   border-radius: 999px;
   padding: 5px 10px;
   font-size: 12px;
+}
+
+/* --- Mis viajes --- */
+.history-screen .trip-list {
+  margin-top: 26px;
+}
+.history-screen h2 {
+  margin: 26px 0 -8px;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--color-muted);
 }

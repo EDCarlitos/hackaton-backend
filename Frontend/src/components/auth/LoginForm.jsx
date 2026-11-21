@@ -14,6 +14,7 @@ export function LoginForm({ modo, onSubmit }) {
   const [verPassword, setVerPassword] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState(null)
+  const [ayuda, setAyuda] = useState(false)
   const registro = modo === 'registro'
 
   const handleSubmit = async (event) => {
@@ -51,12 +52,12 @@ export function LoginForm({ modo, onSubmit }) {
         </label>
       )}
       <label>
-        Correo institucional
+        {registro ? 'Correo institucional' : 'Correo electrónico'}
         <span className="input">
           <Mail size={20} />
           <input
-            aria-label="Correo institucional"
-            placeholder="tu@ucaribe.edu.mx"
+            aria-label="Correo electrónico"
+            placeholder={registro ? 'tu@ucaribe.edu.mx' : 'tu@ejemplo.com'}
             type="email"
             autoComplete="email"
             value={correo}
@@ -97,6 +98,14 @@ export function LoginForm({ modo, onSubmit }) {
             domicilio ni se rastrea mi ubicación.
           </span>
         </label>
+      )}
+      {!registro && (
+        <button type="button" className="forgot" onClick={() => setAyuda((v) => !v)}>
+          ¿Olvidaste tu contraseña?
+        </button>
+      )}
+      {ayuda && !registro && (
+        <p className="forgot-help">Pide a la administración de tu institución que restablezca tu acceso.</p>
       )}
       <ErrorBanner error={error} />
       <button className="primary" type="submit" disabled={enviando}>
