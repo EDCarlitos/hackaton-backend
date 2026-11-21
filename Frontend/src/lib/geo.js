@@ -50,6 +50,7 @@ export const COLORES_MAPA = {
   destino: '#f15156',
   recogida: '#a8a29e',
   abordaje: '#3c787e',
+  conductor: '#191716', // con borde coral: se distingue del origen
   lugar: '#a8a29e',
 }
 

@@ -7,6 +7,7 @@ import { DetailHeader } from '../components/layout/DetailHeader'
 import { PhoneFrame } from '../components/layout/PhoneFrame'
 import { TripMap } from '../components/map/TripMap'
 import { RepublishModal } from '../components/modals/RepublishModal'
+import { LiveLocationCard } from '../components/trip/LiveLocationCard'
 import { ErrorBanner, inputClass, Loading } from '../components/ui/Feedback'
 import { Modal, ModalHeader } from '../components/ui/Modal'
 import { PrimaryButton } from '../components/ui/PrimaryButton'
@@ -120,6 +121,8 @@ export function DriverDetailPage({ navigate, params }) {
               <p>{paso.texto}</p>
             </div>
           </div>
+
+          {['abierto', 'lleno', 'en_curso'].includes(viaje.estado) && <LiveLocationCard viajeId={viaje.id} />}
 
           <TripMap
             polilinea={viaje.ruta.polilinea}

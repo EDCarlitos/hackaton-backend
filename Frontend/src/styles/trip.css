@@ -478,3 +478,84 @@
   font-size: 14px;
   font-weight: 500;
 }
+
+/* --- Ubicación en vivo (conductor) --- */
+.live-card {
+  margin-top: 12px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+}
+.live-card__head {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.live-card__head b {
+  display: block;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.live-card__head p {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-muted);
+}
+.live-dot {
+  position: relative;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--color-line);
+}
+.live-dot--on {
+  background: var(--color-teal);
+}
+/* Pulso suave mientras se comparte: solo transform y opacidad. */
+.live-dot--on::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-teal);
+  animation: pulso-vivo 1.6s var(--ease-out) infinite;
+}
+@keyframes pulso-vivo {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot--on::after {
+    animation: none;
+  }
+}
+.live-btn {
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-teal);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform 140ms var(--ease-out);
+}
+.live-btn:active {
+  transform: scale(0.98);
+}
+.live-btn--off {
+  border: 1px solid var(--color-line);
+  background: #fff;
+  color: var(--color-ink);
+}

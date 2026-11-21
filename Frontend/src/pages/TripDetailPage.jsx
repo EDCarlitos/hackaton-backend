@@ -11,6 +11,7 @@ import { PrimaryButton } from '../components/ui/PrimaryButton'
 import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { useChat } from '../hooks/useChat'
+import { haceTexto, useAhora, useUbicacionConductor } from '../hooks/useUbicacion'
 import { api } from '../lib/api'
 import { ESTADO_RESERVA, ESTADO_VIAJE, formatDiaHora, formatHora, formatMetros, tonoEstado } from '../lib/format'
 
@@ -68,6 +69,11 @@ export function TripDetailPage({ navigate, params }) {
     : viaje && { texto: ESTADO_VIAJE[viaje.estado], tono: tonoEstado(viaje.estado) }
   const paso = viaje && siguientePaso(viaje, reserva)
   const IconoPaso = paso?.icono
+  // Ubicación en vivo del conductor: solo para pasajeros confirmados (el backend también lo exige).
+  const confirmado = reserva?.estado === 'confirmada'
+  const enVivo = useUbicacionConductor(viajeId, { activo: confirmado })
+  const ahora = useAhora()
+  const vivo = confirmado ? enVivo.ubicacion : null
 
   const cancelar = async () => {
     setEnviando(true)
@@ -116,8 +122,11 @@ export function TripDetailPage({ navigate, params }) {
 
           <TripMap
             polilinea={viaje.ruta.polilinea}
+            vivo={vivo}
             etiqueta={
-              reserva?.distancia_pie_m != null
+              vivo
+                ? `Conductor en vivo · ${haceTexto(vivo.actualizada_en, ahora)}`
+                : reserva?.distancia_pie_m != null
                 ? `Recogida a ${formatMetros(reserva.distancia_pie_m)}`
                 : `${viaje.ruta.distancia_km} km · ${viaje.ruta.duracion_min} min`
             }
@@ -127,7 +136,12 @@ export function TripDetailPage({ navigate, params }) {
               ...(reserva ? [{ ...reserva.recogida, tipo: 'recogida', etiqueta: 'Tú' }] : []),
               ...(reserva?.punto_abordaje ? [{ ...reserva.punto_abordaje, tipo: 'abordaje', etiqueta: 'Abordaje' }] : []),
             ]}
-            leyenda={reserva?.punto_abordaje ? ['origen', 'destino', 'recogida', 'abordaje'] : ['origen', 'destino']}
+            leyenda={[
+              'origen',
+              'destino',
+              ...(reserva?.punto_abordaje ? ['recogida', 'abordaje'] : []),
+              ...(vivo ? ['conductor'] : []),
+            ]}
           />
 
           <TripInfo viaje={viaje} />

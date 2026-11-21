@@ -5,8 +5,23 @@ export const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
 
 let promesa = null
 
+// Google llama a window.gm_authFailure cuando rechaza la llave (dominio no permitido, API sin habilitar…)
+// y pinta su propio error. Avisamos a los mapas para que cambien al esquema en SVG (RNF-08).
+let llaveRechazada = false
+const avisos = new Set()
+window.gm_authFailure = () => {
+  llaveRechazada = true
+  avisos.forEach((fn) => fn())
+}
+export const googleRechazoLaLlave = () => llaveRechazada
+export function alRechazarLlave(fn) {
+  avisos.add(fn)
+  return () => avisos.delete(fn)
+}
+
 export function cargarGoogleMaps() {
   if (!GOOGLE_MAPS_KEY) return Promise.reject(new Error('Sin VITE_GOOGLE_MAPS_API_KEY'))
+  if (llaveRechazada) return Promise.reject(new Error('Google rechazó la llave del navegador'))
   if (window.google?.maps?.Map) return Promise.resolve(window.google.maps)
   if (!promesa) {
     promesa = new Promise((resolve, reject) => {

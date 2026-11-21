@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { COLORES_MAPA as COLORES, decodificarPolilinea } from '../../lib/geo'
-import { cargarGoogleMaps, GOOGLE_MAPS_KEY } from '../../lib/googleMaps'
+import { alRechazarLlave, cargarGoogleMaps, GOOGLE_MAPS_KEY, googleRechazoLaLlave } from '../../lib/googleMaps'
 
 /**
  * Mapa del recorrido. Dibuja la polilínea guardada por el backend y marcadores.
  * marcadores: [{ lat, lng, tipo: 'origen'|'destino'|'recogida'|'abordaje'|'lugar', etiqueta? }]
  * onPick(latLng): si se pasa, tocar el mapa elige un punto.
+ * vivo: { lat, lng } | null, posición en vivo del conductor. Se mueve sin redibujar ni reencuadrar el mapa.
  * Con VITE_GOOGLE_MAPS_API_KEY usa Google Maps; sin llave (o si falla) un esquema en SVG.
  */
-export function RouteMap({ polilinea = '', marcadores = [], onPick, alto = 220, className = '' }) {
-  const [googleFalla, setGoogleFalla] = useState(false)
+export function RouteMap({ polilinea = '', marcadores = [], onPick, vivo = null, alto = 220, className = '' }) {
+  const [googleFalla, setGoogleFalla] = useState(googleRechazoLaLlave)
   const onFalla = useCallback(() => setGoogleFalla(true), [])
-  const props = { polilinea, marcadores, onPick, alto }
+  useEffect(() => alRechazarLlave(onFalla), [onFalla])
+  const props = { polilinea, marcadores, onPick, vivo, alto }
   return (
     <div className={`overflow-hidden rounded-[20px] bg-surface ${className}`} style={{ height: alto }}>
       {GOOGLE_MAPS_KEY && !googleFalla ? (
@@ -59,9 +61,10 @@ function devolverMapa(item) {
   libres.push(item)
 }
 
-function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
+function GoogleMapa({ polilinea, marcadores, onPick, vivo, onFalla }) {
   const contenedor = useRef(null)
   const capas = useRef([])
+  const marcadorVivo = useRef(null)
   const onPickRef = useRef(onPick)
   const [item, setItem] = useState(null)
 
@@ -87,6 +90,8 @@ function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
       escucha?.remove()
       capas.current.forEach((c) => c.setMap(null))
       capas.current = []
+      marcadorVivo.current?.setMap(null)
+      marcadorVivo.current = null
       if (tomado) devolverMapa(tomado)
     }
   }, [onFalla])
@@ -133,6 +138,33 @@ function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
     }
   }, [item, clave]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Conductor en vivo: un solo marcador que se mueve con setPosition (no cuesta otra carga de mapa).
+  useEffect(() => {
+    if (!item) return
+    if (!vivo) {
+      marcadorVivo.current?.setMap(null)
+      marcadorVivo.current = null
+      return
+    }
+    const maps = window.google.maps
+    if (!marcadorVivo.current) {
+      marcadorVivo.current = new maps.Marker({
+        map: item.mapa,
+        title: 'Conductor en vivo',
+        zIndex: 1000,
+        icon: {
+          path: maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: COLORES.conductor,
+          fillOpacity: 1,
+          strokeColor: COLORES.destino,
+          strokeWeight: 4,
+        },
+      })
+    }
+    marcadorVivo.current.setPosition({ lat: vivo.lat, lng: vivo.lng })
+  }, [item, vivo?.lat, vivo?.lng]) // eslint-disable-line react-hooks/exhaustive-deps
+
   return <div ref={contenedor} className="size-full" />
 }
 
@@ -140,7 +172,7 @@ function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
 
 const ANCHO = 1000
 
-function MapaEsquema({ polilinea, marcadores, onPick, alto }) {
+function MapaEsquema({ polilinea, marcadores, onPick, vivo, alto }) {
   const svgRef = useRef(null)
   const ruta = useMemo(() => decodificarPolilinea(polilinea), [polilinea])
   const altoVB = Math.round((ANCHO * alto) / 382)
@@ -219,6 +251,16 @@ function MapaEsquema({ polilinea, marcadores, onPick, alto }) {
             </g>
           )
         })}
+      {proy && vivo && (
+        <circle
+          cx={proy.a(vivo).x}
+          cy={proy.a(vivo).y}
+          r="22"
+          fill={COLORES.conductor}
+          stroke={COLORES.destino}
+          strokeWidth="8"
+        />
+      )}
       {!GOOGLE_MAPS_KEY && (
         <text x={ANCHO - 20} y={altoVB - 20} textAnchor="end" fontSize="22" fill="#a8a29e">
           Mapa esquemático
@@ -230,12 +272,15 @@ function MapaEsquema({ polilinea, marcadores, onPick, alto }) {
 
 /** Leyenda de colores de los marcadores que se usan en un mapa. */
 export function MapLegend({ tipos }) {
-  const nombres = { origen: 'Origen', destino: 'Destino', recogida: 'Recogida', abordaje: 'Abordaje' }
+  const nombres = { origen: 'Origen', destino: 'Destino', recogida: 'Recogida', abordaje: 'Abordaje', conductor: 'Conductor en vivo' }
   return (
     <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted">
       {tipos.map((t) => (
         <span key={t} className="flex items-center gap-1">
-          <i className="inline-block size-2.5 rounded-full" style={{ background: COLORES[t] }} />
+          <i
+            className="inline-block size-2.5 rounded-full"
+            style={{ background: COLORES[t], boxShadow: t === 'conductor' ? `0 0 0 2px ${COLORES.destino}` : undefined }}
+          />
           {nombres[t]}
         </span>
       ))}

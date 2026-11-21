@@ -42,8 +42,8 @@ El diseño sale de Figma (archivo `rutacaribe`): Login, Inicio, Detalle del viaj
 | Inicio (buscar) | `pages/HomePage.jsx` + `modals/SearchModal.jsx` + `modals/RideModal.jsx` | RF-12, RF-13, RF-14, RF-15 (solicitar), RF-19, RF-22 (el error se muestra) |
 | Publicar / Salgo hoy | `pages/PublishPage.jsx` | RF-03 (alta de vehículo), RF-05, RF-06, RF-07, RF-09 (resumen antes de publicar) |
 | Mis viajes | `pages/HistoryPage.jsx` + `modals/RepublishModal.jsx` | RF-08, RF-10 |
-| Detalle (conductor) | `pages/DriverDetailPage.jsx` | RF-11, RF-16, RF-17, RF-18, RF-21, RF-23 (chat) |
-| Detalle (pasajero) | `pages/TripDetailPage.jsx` | RF-15 (cancelar), RF-18, RF-23 (chat) |
+| Detalle (conductor) | `pages/DriverDetailPage.jsx` + `trip/LiveLocationCard.jsx` | RF-11, RF-16, RF-17, RF-18, RF-21, RF-23 (chat), ubicación en vivo (opcional, solo con la app abierta) |
+| Detalle (pasajero) | `pages/TripDetailPage.jsx` | RF-15 (cancelar), RF-18, RF-23 (chat), conductor en vivo en el mapa (si está confirmado) |
 | Impacto (desde el perfil) | `pages/ImpactPage.jsx` | RF-23, RF-24 (fórmula, factor, fuente y supuestos; "Estimación") |
 | Perfil | `modals/ProfileModal.jsx` | RF-03, RNF-04 (aviso de privacidad) |
 | Notificaciones | `modals/NotificationsModal.jsx` | Avisos de RF-11, RF-16, RF-21 |
