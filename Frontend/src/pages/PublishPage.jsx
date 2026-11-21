@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CalendarClock, Trash2, Zap } from 'lucide-react'
 import { PointPicker } from '../components/forms/PointPicker'
+import { TimeChips } from '../components/forms/TimeChips'
 import { BottomNav } from '../components/layout/BottomNav'
 import { DetailHeader } from '../components/layout/DetailHeader'
 import { PhoneFrame } from '../components/layout/PhoneFrame'
@@ -12,7 +13,8 @@ import { PrimaryButton } from '../components/ui/PrimaryButton'
 import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { api } from '../lib/api'
-import { aHoraHHMM, aInputFechaHora, deInputFechaHora, formatDiaHora } from '../lib/format'
+import { aHoraHHMM, formatDiaHora } from '../lib/format'
+import { HORAS_SALIDA, resolverHora } from '../lib/horas'
 
 const PESTANAS = { NUEVO: 'nuevo', SALGO_HOY: 'salgo-hoy' }
 
@@ -20,7 +22,9 @@ const PESTANAS = { NUEVO: 'nuevo', SALGO_HOY: 'salgo-hoy' }
 export function PublishPage({ navigate }) {
   const vehiculos = useAsync(() => api.get('/vehiculos'))
   const trayectos = useAsync(() => api.get('/trayectos'))
-  const [pestana, setPestana] = useState(PESTANAS.NUEVO)
+  const [elegida, setPestana] = useState(null)
+  // Si ya tienes trayectos guardados, abre en "Salgo hoy": publicar en un toque (objetivo 1).
+  const pestana = elegida ?? (trayectos.data?.trayectos.length ? PESTANAS.SALGO_HOY : PESTANAS.NUEVO)
 
   const activos = vehiculos.data?.vehiculos.filter((v) => v.activo) || []
   const abrirViaje = (viaje) => navigate(PAGES.DRIVER_DETAIL, { viajeId: viaje.id })
@@ -72,27 +76,22 @@ export function PublishPage({ navigate }) {
 
 // ---------- Nuevo viaje ----------
 
-function salidaSugerida() {
-  const d = new Date(Date.now() + 30 * 60_000)
-  d.setMinutes(Math.ceil(d.getMinutes() / 5) * 5, 0, 0)
-  return aInputFechaHora(d)
-}
-
 function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
   const [origen, setOrigen] = useState(null)
   const [destino, setDestino] = useState(null)
-  const [salida, setSalida] = useState(salidaSugerida)
+  const [hora, setHora] = useState({ id: 'en30', otra: '' })
   const [vehiculoId, setVehiculoId] = useState(vehiculos[0].id)
   const vehiculo = vehiculos.find((v) => v.id === Number(vehiculoId)) || vehiculos[0]
   const [asientos, setAsientos] = useState(Math.min(3, vehiculo.asientos))
   const [costo, setCosto] = useState('')
   const [guardarPlantilla, setGuardarPlantilla] = useState(false)
   const [nombrePlantilla, setNombrePlantilla] = useState('')
-  const [revisando, setRevisando] = useState(false)
+  const [salida, setSalida] = useState(null) // se fija al revisar: "en 15 min" no se mueve mientras confirmas
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState(null)
 
-  const listo = origen && destino && salida
+  const listo = origen && destino && (hora.id !== 'otra' || hora.otra)
+  const plazas = Math.min(Number(asientos), vehiculo.asientos)
 
   const publicar = async () => {
     setEnviando(true)
@@ -102,8 +101,8 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
         vehiculo_id: vehiculo.id,
         origen,
         destino,
-        salida_en: deInputFechaHora(salida),
-        asientos_ofrecidos: Math.min(Number(asientos), vehiculo.asientos),
+        salida_en: salida.toISOString(),
+        asientos_ofrecidos: plazas,
         costo_referencia: costo === '' ? undefined : Number(costo),
       })
       if (guardarPlantilla) {
@@ -111,7 +110,7 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
         await api
           .post('/trayectos', {
             nombre: nombrePlantilla.trim() || `${origen.texto} → ${destino.texto}`.slice(0, 80),
-            hora_habitual: aHoraHHMM(new Date(salida)),
+            hora_habitual: aHoraHHMM(salida),
             desde_viaje_id: viaje.id,
           })
           .then(onPlantilla)
@@ -120,33 +119,32 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
       onPublicado(viaje)
     } catch (err) {
       setError(err)
-      setRevisando(false)
+      setSalida(null)
     } finally {
       setEnviando(false)
     }
   }
 
-  if (revisando) {
+  if (salida) {
     // Resumen obligatorio antes de publicar (caso límite 7.4: hora equivocada).
     return (
       <section className="mt-6 grid grid-cols-1 gap-4">
-        <h2 className="text-lg font-semibold">Revisa antes de publicar</h2>
+        <h2 className="text-lg font-semibold">¿Todo bien?</h2>
         <div className="grid grid-cols-1 gap-3 rounded-[20px] border border-line p-4 text-sm">
-          <p className="flex items-center gap-2 font-semibold">
-            <CalendarClock size={18} /> {formatDiaHora(new Date(salida))}
+          <p className="flex items-center gap-2 text-base font-semibold">
+            <CalendarClock size={18} className="text-coral" /> {formatDiaHora(salida)}
           </p>
           <Route origen={origen} destino={destino} />
           <p>
-            {asientos} asiento{Number(asientos) === 1 ? '' : 's'} · {vehiculo.placa_o_descripcion}
+            {plazas} lugar{plazas === 1 ? '' : 'es'} · {vehiculo.placa_o_descripcion}
           </p>
           <p className="text-muted">{costo === '' ? 'Sin costo de referencia' : `$${costo} de referencia (no vinculante)`}</p>
-          <p className="text-xs text-muted">La ruta de manejo se calcula una sola vez al publicar.</p>
         </div>
         <ErrorBanner error={error} />
         <PrimaryButton onClick={publicar} disabled={enviando}>
-          {enviando ? 'Publicando…' : 'Confirmar y publicar'}
+          {enviando ? 'Calculando la ruta…' : 'Publicar viaje'}
         </PrimaryButton>
-        <PrimaryButton variante="secundario" onClick={() => setRevisando(false)} disabled={enviando}>
+        <PrimaryButton variante="secundario" onClick={() => setSalida(null)} disabled={enviando}>
           Corregir
         </PrimaryButton>
       </section>
@@ -155,28 +153,34 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
 
   return (
     <form
-      className="mt-6 grid grid-cols-1 gap-4"
+      className="mt-6 grid grid-cols-1 gap-6"
       onSubmit={(e) => {
         e.preventDefault()
-        if (listo) setRevisando(true)
+        if (listo) setSalida(resolverHora(HORAS_SALIDA, hora))
       }}
     >
-      <PointPicker label="Origen (aproximado)" value={origen} onChange={setOrigen} placeholder="¿De dónde sales?" privado />
-      <PointPicker label="Destino" value={destino} onChange={setDestino} placeholder="¿A dónde vas?" privado />
-      <label className="text-sm font-medium">
-        Fecha y hora de salida
-        <input
-          type="datetime-local"
-          className={inputClass}
-          value={salida}
-          min={aInputFechaHora(new Date())}
-          onChange={(e) => setSalida(e.target.value)}
-          required
-        />
-      </label>
-      <div className="grid grid-cols-2 gap-3">
+      <fieldset className="grid grid-cols-1 gap-4">
+        <legend className="form-step">
+          <span>1</span> Ruta
+        </legend>
+        <PointPicker label="Sales de" value={origen} onChange={setOrigen} placeholder="Colonia, calle o lugar" privado />
+        <PointPicker label="Vas a" value={destino} onChange={setDestino} placeholder="Ej. Universidad del Caribe" privado />
+        <p className="-mt-1 text-xs text-muted">Por privacidad guardamos tu origen aproximado (≈100 m), nunca tu casa.</p>
+      </fieldset>
+
+      <fieldset className="grid grid-cols-1 gap-3">
+        <legend className="form-step">
+          <span>2</span> Salida
+        </legend>
+        <TimeChips opciones={HORAS_SALIDA} valor={hora} onChange={setHora} etiqueta="Salida" />
+      </fieldset>
+
+      <fieldset className="grid grid-cols-1 gap-3">
+        <legend className="form-step">
+          <span>3</span> Lugares y costo
+        </legend>
         {vehiculos.length > 1 && (
-          <label className="col-span-2 text-sm font-medium">
+          <label className="text-sm font-medium">
             Vehículo
             <select className={inputClass} value={vehiculoId} onChange={(e) => setVehiculoId(e.target.value)}>
               {vehiculos.map((v) => (
@@ -187,36 +191,48 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
             </select>
           </label>
         )}
-        <label className="text-sm font-medium">
-          Asientos
-          <select className={inputClass} value={asientos} onChange={(e) => setAsientos(e.target.value)}>
-            {Array.from({ length: vehiculo.asientos }, (_, i) => i + 1).map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm font-medium">
-          Costo de referencia
-          <input
-            type="number"
-            min="0"
-            step="1"
-            placeholder="Opcional"
-            className={inputClass}
-            value={costo}
-            onChange={(e) => setCosto(e.target.value)}
-          />
-        </label>
-      </div>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <span className="mb-2 block text-sm font-medium">Lugares libres</span>
+            <div className="chip-row" role="group" aria-label="Lugares libres">
+              {Array.from({ length: vehiculo.asientos }, (_, i) => i + 1).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className="chip chip--square"
+                  aria-pressed={plazas === n}
+                  onClick={() => setAsientos(n)}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="w-28 text-sm font-medium">
+            Costo
+            <span className="mt-2 flex h-11 items-center gap-1 rounded-xl border border-line px-3 focus-within:border-ink">
+              <span className="text-muted">$</span>
+              <input
+                inputMode="decimal"
+                placeholder="0"
+                aria-label="Costo de referencia en pesos"
+                className="w-full min-w-0 border-0 bg-transparent text-sm font-normal outline-none"
+                value={costo}
+                onChange={(e) => setCosto(e.target.value.replace(/[^\d.]/g, ''))}
+              />
+            </span>
+          </label>
+        </div>
+        <p className="text-xs text-muted">El costo es opcional y solo de referencia: la app no cobra ni procesa pagos.</p>
+      </fieldset>
+
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" className="accent-coral" checked={guardarPlantilla} onChange={(e) => setGuardarPlantilla(e.target.checked)} />
-        Guardar como “Mi trayecto” para salir con un toque
+        <input type="checkbox" className="size-4 accent-coral" checked={guardarPlantilla} onChange={(e) => setGuardarPlantilla(e.target.checked)} />
+        Guardar como “Mi trayecto” para la próxima vez salir con un toque
       </label>
       {guardarPlantilla && (
         <input
-          className={inputClass}
+          className="-mt-3 block h-11 w-full min-w-0 rounded-xl border border-line bg-white px-3 text-sm outline-none focus:border-ink"
           placeholder={origen && destino ? `${origen.texto} → ${destino.texto}` : 'Nombre, ej. Casa → UCaribe'}
           maxLength={80}
           value={nombrePlantilla}
@@ -225,7 +241,7 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
       )}
       <ErrorBanner error={error} />
       <PrimaryButton type="submit" disabled={!listo}>
-        Revisar y publicar
+        {listo ? 'Revisar y publicar' : 'Elige de dónde sales y a dónde vas'}
       </PrimaryButton>
     </form>
   )
@@ -266,7 +282,7 @@ function SalgoHoy({ trayectos, onPublicado }) {
           </button>
           <button
             type="button"
-            className="flex h-9 items-center gap-1 rounded-full bg-coral px-3 text-xs font-semibold"
+            className="flex h-9 items-center gap-1 rounded-full bg-coral px-3 text-xs font-semibold text-white"
             onClick={() => setElegido(t)}
           >
             <Zap size={14} /> Salgo hoy
