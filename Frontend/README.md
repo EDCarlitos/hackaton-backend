@@ -27,7 +27,7 @@ solicita el viaje de Carla → Carla lo acepta en *Mis viajes → detalle* → l
 | Variable | Para qué |
 |---|---|
 | `VITE_API_URL` | URL del backend en producción (vacía en dev). Agrega este origen a `CORS_ORIGINS` del backend |
-| `VITE_GOOGLE_MAPS_API_KEY` | Llave de navegador (Maps JavaScript API), restringida por dominio. Sin ella, los mapas son un **esquema en SVG** y los lugares se eligen de una lista |
+| `VITE_GOOGLE_MAPS_API_KEY` | Llave de navegador (Maps JavaScript API + Places API (New)), restringida por sitio web. Places da el autocompletado de direcciones en Cancún (`lib/googleMaps.js`, con debounce de 300 ms y sesiones). Sin llave, los mapas son un **esquema en SVG** y solo se buscan los lugares frecuentes |
 
 La ruta de manejo **nunca** se pide desde el navegador: el backend la calcula una vez al publicar (RF-07) y el
 frontend solo dibuja la polilínea guardada.

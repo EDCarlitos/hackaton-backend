@@ -161,8 +161,8 @@ function NuevoViaje({ vehiculos, onPublicado, onPlantilla }) {
         if (listo) setRevisando(true)
       }}
     >
-      <PointPicker label="Origen (aproximado)" value={origen} onChange={setOrigen} placeholder="¿De dónde sales?" />
-      <PointPicker label="Destino" value={destino} onChange={setDestino} placeholder="¿A dónde vas?" />
+      <PointPicker label="Origen (aproximado)" value={origen} onChange={setOrigen} placeholder="¿De dónde sales?" privado />
+      <PointPicker label="Destino" value={destino} onChange={setDestino} placeholder="¿A dónde vas?" privado />
       <label className="text-sm font-medium">
         Fecha y hora de salida
         <input
