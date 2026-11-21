@@ -9,6 +9,7 @@
     "db:migrate": "node --env-file=.env src/db/migrate.js migrate",
     "db:seed": "node --env-file=.env src/db/migrate.js seed",
     "db:setup": "node --env-file=.env src/db/migrate.js setup",
+    "demo:datos": "node --env-file=.env scripts/datos-demo.js",
     "pretest": "node --env-file=.env --env-file=.env.test tests/setup-db.js",
     "test": "node --env-file=.env --env-file=.env.test --test --test-concurrency=1 \"tests/**/*.test.js\""
   },
