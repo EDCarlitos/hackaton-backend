@@ -25,12 +25,45 @@ export function RouteMap({ polilinea = '', marcadores = [], onPick, alto = 220, 
 
 // ---------- Google Maps ----------
 
+// Google cobra cada carga de mapa (cada `new google.maps.Map`), no los re-renders de React.
+// Por eso los mapas se reutilizan: al desmontarse, la instancia se limpia y vuelve a este pool,
+// y la siguiente pantalla la toma en vez de crear otra. En una sesión normal se crean 1 o 2 mapas.
+const CENTRO = { lat: 21.17, lng: -86.85 }
+const ESTILO_MINIMO = [
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+]
+const libres = []
+let creados = 0
+
+function tomarMapa(maps) {
+  const libre = libres.pop()
+  if (libre) return libre
+  const div = document.createElement('div')
+  div.style.cssText = 'width:100%;height:100%'
+  const mapa = new maps.Map(div, {
+    center: CENTRO,
+    zoom: 12,
+    disableDefaultUI: true,
+    zoomControl: true,
+    clickableIcons: false,
+    styles: ESTILO_MINIMO,
+  })
+  creados += 1
+  if (import.meta.env.DEV) window.__mapasCreados = creados
+  return { div, mapa }
+}
+
+function devolverMapa(item) {
+  item.div.remove()
+  libres.push(item)
+}
+
 function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
   const contenedor = useRef(null)
-  const mapa = useRef(null)
   const capas = useRef([])
   const onPickRef = useRef(onPick)
-  const [listo, setListo] = useState(false)
+  const [item, setItem] = useState(null)
 
   useEffect(() => {
     onPickRef.current = onPick
@@ -38,29 +71,31 @@ function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
 
   useEffect(() => {
     let vivo = true
+    let tomado = null
+    let escucha = null
     cargarGoogleMaps()
       .then((maps) => {
         if (!vivo || !contenedor.current) return
-        mapa.current = new maps.Map(contenedor.current, {
-          center: { lat: 21.17, lng: -86.85 },
-          zoom: 12,
-          disableDefaultUI: true,
-          zoomControl: true,
-          clickableIcons: false,
-        })
-        mapa.current.addListener('click', (e) => onPickRef.current?.({ lat: e.latLng.lat(), lng: e.latLng.lng() }))
-        setListo(true)
+        tomado = tomarMapa(maps)
+        contenedor.current.appendChild(tomado.div)
+        escucha = tomado.mapa.addListener('click', (e) => onPickRef.current?.({ lat: e.latLng.lat(), lng: e.latLng.lng() }))
+        setItem(tomado)
       })
       .catch(() => vivo && onFalla())
     return () => {
       vivo = false
+      escucha?.remove()
+      capas.current.forEach((c) => c.setMap(null))
+      capas.current = []
+      if (tomado) devolverMapa(tomado)
     }
   }, [onFalla])
 
   const clave = JSON.stringify([polilinea, marcadores])
   useEffect(() => {
-    if (!listo) return
+    if (!item) return
     const maps = window.google.maps
+    const { mapa } = item
     capas.current.forEach((c) => c.setMap(null))
     capas.current = []
     const limites = new maps.LatLngBounds()
@@ -68,14 +103,14 @@ function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
     const ruta = decodificarPolilinea(polilinea)
     if (ruta.length) {
       capas.current.push(
-        new maps.Polyline({ map: mapa.current, path: ruta, strokeColor: '#f15156', strokeWeight: 5, strokeOpacity: 0.9 }),
+        new maps.Polyline({ map: mapa, path: ruta, strokeColor: '#f15156', strokeWeight: 5, strokeOpacity: 0.9 }),
       )
       ruta.forEach((p) => limites.extend(p))
     }
     for (const m of marcadores) {
       capas.current.push(
         new maps.Marker({
-          map: mapa.current,
+          map: mapa,
           position: { lat: m.lat, lng: m.lng },
           title: m.etiqueta,
           icon: {
@@ -90,8 +125,13 @@ function GoogleMapa({ polilinea, marcadores, onPick, onFalla }) {
       )
       limites.extend(m)
     }
-    if (!limites.isEmpty()) mapa.current.fitBounds(limites, 32)
-  }, [listo, clave]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!limites.isEmpty()) mapa.fitBounds(limites, 32)
+    else {
+      // Un mapa reutilizado conserva la vista anterior: se regresa a Cancún.
+      mapa.setCenter(CENTRO)
+      mapa.setZoom(12)
+    }
+  }, [item, clave]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return <div ref={contenedor} className="size-full" />
 }
@@ -190,7 +230,7 @@ function MapaEsquema({ polilinea, marcadores, onPick, alto }) {
 
 /** Leyenda de colores de los marcadores que se usan en un mapa. */
 export function MapLegend({ tipos }) {
-  const nombres = { origen: 'Origen', destino: 'Destino', recogida: 'Tu recogida', abordaje: 'Punto de abordaje' }
+  const nombres = { origen: 'Origen', destino: 'Destino', recogida: 'Recogida', abordaje: 'Abordaje' }
   return (
     <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-muted">
       {tipos.map((t) => (
