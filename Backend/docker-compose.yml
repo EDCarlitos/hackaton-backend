@@ -1,3 +1,7 @@
+# Nombre fijo del proyecto: el volumen se llama backend_postgres_data y conserva los datos
+# aunque la carpeta cambie de nombre o se ejecute desde otra ruta.
+name: backend
+
 services:
   postgres:
     image: postgres:16-alpine
