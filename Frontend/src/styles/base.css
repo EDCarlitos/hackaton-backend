@@ -1,0 +1,53 @@
+/* Reset mínimo, marco del prototipo y contenedor de teléfono. */
+* {
+  box-sizing: border-box;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+h1,
+h2,
+p {
+  margin: 0;
+}
+h1 {
+  font-family: var(--font-display);
+}
+
+.prototype {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background: var(--color-backdrop);
+  padding: 24px;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+.phone {
+  width: 430px;
+  min-height: 932px;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+  box-shadow: 0 18px 50px #1917161f;
+}
+.app-screen {
+  padding: 36px 24px 112px;
+}
+
+@media (max-width: 480px) {
+  .prototype {
+    padding: 0;
+    background: #fff;
+    align-items: start;
+  }
+  .phone {
+    width: 100%;
+    min-height: 100svh;
+    box-shadow: none;
+  }
+}

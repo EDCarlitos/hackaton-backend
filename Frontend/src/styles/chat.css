@@ -1,0 +1,91 @@
+/* Chat del viaje: components/chat */
+.chat {
+  margin: 34px 9px 0;
+}
+.chat header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.chat header > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+}
+
+.avatar-stack {
+  display: flex;
+}
+.avatar-stack i {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: -4px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: var(--color-surface);
+  font-style: normal;
+}
+.avatar-stack i {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.avatar-stack .avatar--conductor {
+  background: var(--color-coral);
+}
+
+.chat-messages {
+  min-height: 60px;
+  max-height: 240px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 0;
+}
+.bubble {
+  max-width: 78%;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 14px 14px 14px 4px;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 13px;
+  line-height: 18px;
+}
+.bubble--mine {
+  align-self: flex-end;
+  border-radius: 14px 14px 4px;
+  background: var(--color-coral);
+}
+
+.chat form {
+  display: flex;
+  gap: 8px;
+}
+.chat input {
+  height: 44px;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  border-radius: 12px;
+  padding: 0 12px;
+  background: var(--color-surface);
+  font-size: 13px;
+}
+.chat form button {
+  width: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--color-coral);
+  display: grid;
+  place-items: center;
+  transition: transform 0.16s ease;
+}
+.chat form button:active {
+  transform: scale(0.92);
+}

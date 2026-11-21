@@ -1,0 +1,326 @@
+/* Todo lo que pinta un viaje: components/trip */
+
+/* --- Viaje actual (inicio) --- */
+.current-trip {
+  margin-top: 42px;
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  padding: 18px 20px;
+}
+.current-trip > div,
+.current-trip footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.current-trip > div > span {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.current-trip h2 {
+  margin: 12px 0 8px;
+  font-size: 18px;
+}
+.current-trip footer p {
+  display: grid;
+  gap: 3px;
+  font-size: 14px;
+}
+.current-trip footer small {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.current-trip footer button,
+.detail-link {
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  color: var(--color-ink);
+  gap: 3px;
+  font-size: 13px;
+}
+
+/* --- Viajes disponibles (inicio) --- */
+.available {
+  margin-top: 22px;
+}
+.available > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.available h2 {
+  font-size: 18px;
+}
+.available p {
+  color: var(--color-muted);
+  font-size: 13px;
+  margin-top: 4px;
+}
+.filter {
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  padding: 0;
+  height: 25px;
+}
+
+/* --- Tarjeta de viaje --- */
+.trip-card {
+  min-height: 125px;
+  gap: 10px;
+  cursor: pointer;
+  border: 1px solid var(--color-coral);
+  border-left: 4px solid var(--color-coral);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: #fff;
+  transition:
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.trip-card:hover {
+  background: #fff9f8;
+  box-shadow: 0 7px 18px #f1515614;
+}
+.trip-card--compact {
+  height: 174px;
+  padding-top: 14px;
+}
+.trip-card--compact .detail-link {
+  justify-content: flex-end;
+  font-size: 12px;
+}
+.trip-title,
+.trip-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.trip-title b {
+  font-size: 15px;
+}
+.trip-title span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.trip-footer small {
+  font-size: 11px;
+}
+
+/* --- Ruta (origen → destino) --- */
+.route {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.route > div {
+  display: grid;
+  gap: 7px;
+}
+.route strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.route-line {
+  height: 44px;
+  position: relative;
+  width: 8px;
+}
+.route-line::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 8px;
+  height: 28px;
+  border-left: 1px solid var(--color-coral);
+}
+.route-line i,
+.route-line b {
+  position: absolute;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--color-coral);
+  background: #fff;
+}
+.route-line b {
+  bottom: 0;
+  background: var(--color-coral);
+}
+
+/* --- Asientos --- */
+.seats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-coral);
+  font-size: 14px;
+  line-height: 1;
+}
+.seats .empty {
+  color: var(--color-line);
+}
+.seats small {
+  margin-left: 4px;
+  color: var(--color-ink);
+  font-size: 11px;
+}
+
+/* --- Mapa --- */
+.map-panel {
+  height: 254px;
+  margin-top: 27px;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--color-surface);
+  border-radius: 20px;
+}
+.map-panel::before,
+.map-panel::after {
+  content: "";
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border: 1px solid var(--color-line);
+  border-radius: 45%;
+  transform: rotate(26deg);
+}
+.map-panel::before {
+  transform: translate(-95px, 80px) rotate(26deg);
+}
+.map-panel > div {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  z-index: 1;
+}
+.map-panel b {
+  font-size: 15px;
+}
+.map-panel small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.map-panel > span {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  background: white;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* --- Resumen del viaje (pasajero) --- */
+.trip-info {
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  margin-top: 20px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 12px;
+}
+.trip-info > div,
+.trip-info footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.trip-info > div span {
+  font-size: 12px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.trip-info footer small {
+  font-size: 11px;
+}
+
+/* --- Lista de pasajeros (conductor) --- */
+.passengers {
+  border: 1px solid var(--color-line);
+  border-radius: 20px;
+  margin-top: 20px;
+  padding: 16px 18px;
+}
+.passengers header {
+  display: flex;
+  justify-content: space-between;
+}
+.passengers header > b {
+  font-size: 16px;
+}
+.passengers small {
+  color: var(--color-muted);
+  font-size: 12px;
+}
+.passenger {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-line);
+}
+.passenger > span {
+  background: var(--color-surface);
+  height: 36px;
+  width: 36px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+}
+.passenger p {
+  display: grid;
+  gap: 3px;
+  flex: 1;
+}
+.passenger p b {
+  font-size: 14px;
+}
+.passenger em {
+  color: var(--color-muted);
+  font-style: normal;
+  font-size: 12px;
+}
+.passengers footer {
+  display: grid;
+  gap: 5px;
+  padding-top: 12px;
+}
+.passengers footer b {
+  font-size: 12px;
+}
+
+.trip-card--off {
+  border-color: var(--color-line);
+  border-left-color: var(--color-line);
+}
+.trip-footer {
+  gap: 8px;
+  flex-wrap: wrap;
+}

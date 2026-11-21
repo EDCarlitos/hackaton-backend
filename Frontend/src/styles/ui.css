@@ -1,0 +1,25 @@
+/* Piezas genéricas: components/ui */
+.icon-button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-ink);
+  background: var(--color-surface);
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--color-coral);
+}
+.status-chip--off {
+  background: var(--color-surface);
+  color: var(--color-muted);
+}

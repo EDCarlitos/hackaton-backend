@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de diseño (ver Frontend/DESIGN.MD). Se usan como utilidades de Tailwind
+ * (bg-coral, text-muted, border-line…) y como var(--color-*) en src/styles.
+ * `static` hace que Tailwind emita todas las variables aunque solo se usen en CSS.
+ */
+@theme static {
+  --color-coral: #f15156;
+  --color-ink: #191716;
+  --color-muted: #696461;
+  --color-surface: #f7f6f5;
+  --color-line: #e9e7e5;
+  --color-backdrop: #f2f0ee;
+  --font-display: Poppins, Inter, sans-serif;
+  --font-body: Inter, sans-serif;
+}
+
+:root { font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+body { margin: 0; min-width: 320px; }

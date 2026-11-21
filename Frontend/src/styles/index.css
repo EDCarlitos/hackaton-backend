@@ -1,0 +1,7 @@
+/* El orden importa: de lo general (base) a lo particular (pantallas). */
+@import "./base.css";
+@import "./ui.css";
+@import "./layout.css";
+@import "./trip.css";
+@import "./chat.css";
+@import "./pages.css";
