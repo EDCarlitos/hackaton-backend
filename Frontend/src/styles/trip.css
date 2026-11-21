@@ -122,32 +122,6 @@
   font-weight: 500;
   text-align: left;
 }
-.empty-cta {
-  padding: 20px;
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  border-radius: 16px;
-  background: var(--color-surface);
-  text-align: center;
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--color-muted);
-}
-.empty-cta button {
-  height: 40px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 20px;
-  background: var(--color-coral);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  transition: transform 140ms var(--ease-out);
-}
-.empty-cta button:active {
-  transform: scale(0.96);
-}
 .trip-list {
   margin-top: 20px;
   display: grid;

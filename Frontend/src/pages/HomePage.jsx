@@ -150,13 +150,13 @@ export function HomePage({ navigate }) {
         <header>
           <div>
             <h2>Conductores disponibles</h2>
-            <p>
-              {!recogida
-                ? 'Elige dónde te recogen'
-                : cargandoPrimera
-                  ? 'Buscando…'
-                  : `${n} viaje${n === 1 ? '' : 's'} cerca de ti`}
-            </p>
+            {recogida ? (
+              <p>{cargandoPrimera ? 'Buscando…' : `${n} viaje${n === 1 ? '' : 's'} cerca de ti`}</p>
+            ) : (
+              <button type="button" className="filters-summary" onClick={abrirFiltros}>
+                Elige dónde te recogen
+              </button>
+            )}
           </div>
           <button type="button" className="filter" onClick={abrirFiltros} aria-label={`Filtros. Orden: ${orden}`}>
             <SlidersHorizontal size={18} /> {orden}
@@ -172,22 +172,6 @@ export function HomePage({ navigate }) {
         {cargandoPrimera && <Loading texto="Buscando conductores…" />}
 
         <div className="trip-list">
-          {!recogida && (
-            <div className="empty-cta">
-              <p>Dinos dónde te recogen y te mostramos a quién le queda de paso.</p>
-              <button type="button" onClick={abrirFiltros}>
-                Elegir punto de recogida
-              </button>
-            </div>
-          )}
-          {recogida && busqueda.data && !n && (
-            <div className="empty-cta">
-              <p>Nadie pasa cerca {textoHora}. Los viajes de la mañana suelen salir entre 6:30 y 7:30.</p>
-              <button type="button" onClick={abrirFiltros}>
-                Cambiar filtros
-              </button>
-            </div>
-          )}
           {resultados.map((r) => (
             <TripCard
               key={r.viaje_id}
