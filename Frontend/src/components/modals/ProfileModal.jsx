@@ -44,7 +44,7 @@ export function ProfileModal({ onVerImpacto, onClose }) {
           <Leaf size={18} className="text-coral" />
           <span className="flex-1">
             <b className="block font-semibold">Tu impacto</b>
-            <small className="text-muted">CO₂ que evitas al compartir el auto</small>
+            <small className="text-muted">Tu huella de carbono y el CO₂ que evitas al compartir</small>
           </span>
           <ChevronRight size={18} />
         </button>
@@ -73,7 +73,7 @@ export function ProfileModal({ onVerImpacto, onClose }) {
       <details className="mt-4 text-xs text-muted">
         <summary className="cursor-pointer font-medium text-ink">Aviso de privacidad</summary>
         <p className="mt-2">
-          RutaCaribe guarda lo mínimo: tu correo institucional, tu nombre visible y la placa o descripción de tu
+          Yendo guarda lo mínimo: tu correo institucional, tu nombre visible y la placa o descripción de tu
           vehículo. A otros usuarios solo se les muestra tu nombre visible. Los orígenes se guardan como referencias
           aproximadas (sin domicilio exacto) y la app no rastrea tu ubicación en segundo plano: solo la usa si tocas
           “Usar mi ubicación”. El costo es una referencia no vinculante y la app no procesa pagos.

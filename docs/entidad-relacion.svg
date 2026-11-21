@@ -1,0 +1,408 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2060 1674" width="2060" height="1674" role="img" aria-labelledby="title desc">
+<title id="title">Modelo entidad-relación</title>
+<desc id="desc">Schema public con instituciones y dominios permitidos; cada institución tiene su propio schema con usuarios, vehículos, trayectos, viajes, reservas, mensajes, notificaciones y ubicaciones del viaje.</desc>
+<defs>
+<marker id="many" viewBox="0 0 22 20" refX="22" refY="10" markerWidth="22" markerHeight="20" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+  <path d="M22 2 L12 10 L22 18 M12 10 H22" fill="none" stroke="#54708e" stroke-width="1.6"/>
+  <circle cx="6" cy="10" r="4" fill="#fff" stroke="#54708e" stroke-width="1.6"/></marker>
+<marker id="one" viewBox="0 0 22 20" refX="22" refY="10" markerWidth="22" markerHeight="20" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+  <path d="M12 3 V17 M17 3 V17" fill="none" stroke="#54708e" stroke-width="1.6"/></marker>
+<marker id="zone" viewBox="0 0 22 20" refX="22" refY="10" markerWidth="22" markerHeight="20" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+  <path d="M17 3 V17" fill="none" stroke="#54708e" stroke-width="1.6"/>
+  <circle cx="8" cy="10" r="4" fill="#fff" stroke="#54708e" stroke-width="1.6"/></marker>
+<marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#54708e"/></marker>
+<style>
+  text{font-family:Inter,"DejaVu Sans",system-ui,sans-serif;fill:#14243a}
+  .subtitle{font-size:17px;fill:#465c73}
+  .label{font-size:12px;font-weight:700;letter-spacing:1.4px;fill:#3b5d80}
+  .heading{font-size:22px;font-weight:700}
+  .tname{font-size:14px;font-weight:700;fill:#fff}
+  .col{font-size:12.5px}
+  .type{font-size:11.5px;fill:#6b7f94}
+  .badge{font-size:9.5px;font-weight:700;letter-spacing:.4px}
+  .rel{fill:none;stroke:#54708e;stroke-width:1.6;marker-start:url(#start);}
+  .rlabel{font-size:11px;fill:#465c73;paint-order:stroke;stroke:#f4f7fb;stroke-width:4px}
+  .note{font-size:12.5px;fill:#465c73}
+</style></defs>
+<rect width="2060" height="1674" rx="24" fill="#f4f7fb"/>
+<rect x="32" y="31" width="4" height="52" rx="2" fill="#426889"/>
+<text x="50" y="52" class="heading">Modelo entidad-relación</text>
+<text x="50" y="77" class="subtitle">PostgreSQL 16 · un schema por institución (multi-tenant)</text>
+<rect x="30" y="120" width="350" height="1524" rx="20" fill="#eaf0f7" stroke="#b9cadc"/>
+<text x="56" y="156" class="label">SCHEMA PUBLIC · GLOBAL</text>
+<rect x="400" y="120" width="1630" height="1524" rx="20" fill="#eef3f9" stroke="#b9cadc" stroke-dasharray="6 5"/>
+<text x="426" y="156" class="label">SCHEMA DE CADA INSTITUCIÓN · ej. ucaribe</text>
+<text x="426" y="176" class="note">Las mismas tablas en cada tenant (migraciones de src/db/tenant/)</text>
+<path d="M350 300.0 H398" fill="none" stroke="#54708e" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+<rect x="60" y="660" width="290" height="230" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M60 672 a12 12 0 0 1 12 -12 h266 a12 12 0 0 1 12 12 v28 h-290z" fill="#5b7a99"/>
+<text x="76" y="686" class="tname">Tipos y extensiones</text>
+<text x="76" y="722" class="col" font-weight="700">rol_usuario</text>
+<text x="86" y="740" class="type">usuario · admin</text>
+<text x="76" y="762" class="col" font-weight="700">estado_viaje</text>
+<text x="86" y="780" class="type">abierto · lleno · en_curso ·</text>
+<text x="86" y="798" class="type">finalizado · cancelado</text>
+<text x="76" y="820" class="col" font-weight="700">estado_reserva</text>
+<text x="86" y="838" class="type">solicitada · confirmada · rechazada ·</text>
+<text x="86" y="856" class="type">cancelada · completada · expirada</text>
+<text x="76" y="884" class="col" font-weight="700">citext</text>
+<text x="128" y="884" class="type">correos y dominios sin mayúsculas</text>
+<text x="60" y="930" class="label">LEYENDA</text>
+<path d="M70 956 H130" fill="none" stroke="#54708e" stroke-width="1.6" marker-end="url(#one)"/>
+<text x="144" y="960" class="note">exactamente uno</text>
+<path d="M70 984 H130" fill="none" stroke="#54708e" stroke-width="1.6" marker-end="url(#zone)"/>
+<text x="144" y="988" class="note">cero o uno</text>
+<path d="M70 1012 H130" fill="none" stroke="#54708e" stroke-width="1.6" marker-end="url(#many)"/>
+<text x="144" y="1016" class="note">cero o muchos</text>
+<path d="M70 1040 H130" fill="none" stroke="#54708e" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+<text x="144" y="1044" class="note">un schema por institución</text>
+<rect x="70" y="1059" width="34" height="16" rx="4" fill="#fde6d8"/><text x="87" y="1071" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="144" y="1071" class="note">llave primaria</text>
+<rect x="70" y="1085" width="34" height="16" rx="4" fill="#e1ecf7"/><text x="87" y="1097" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="144" y="1097" class="note">llave foránea</text>
+<rect x="70" y="1111" width="34" height="16" rx="4" fill="#e3f1e1"/><text x="87" y="1123" class="badge" fill="#3d6b3a" text-anchor="middle">UQ</text>
+<text x="144" y="1123" class="note">única</text>
+<rect x="450" y="1132.0" width="530" height="238" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<text x="468" y="1162.0" class="note" font-weight="700" style="fill:#14243a">Reglas que garantiza la base de datos</text>
+<text x="468" y="1183.0" class="note">• (vehiculo_id, conductor_id) → vehiculos (id, usuario_id):</text>
+<text x="480" y="1204.0" class="note">el vehículo del viaje o plantilla es del conductor</text>
+<text x="468" y="1225.0" class="note">• ux_reserva_activa: una sola reserva solicitada o</text>
+<text x="480" y="1246.0" class="note">confirmada por pasajero y viaje</text>
+<text x="468" y="1267.0" class="note">• trg_reservas_cupo: nunca más confirmadas que</text>
+<text x="480" y="1288.0" class="note">asientos_ofrecidos</text>
+<text x="468" y="1309.0" class="note">• ubicaciones_viaje: solo la última posición</text>
+<text x="480" y="1330.0" class="note">(una fila por viaje, sin historial)</text>
+<text x="468" y="1351.0" class="note">• checks de asientos (1–4), coordenadas y estados</text>
+<path d="M205.0 450.0 L205.0 360.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M585.0 520.0 L585.0 422.0 L1115.0 422.0 L1115.0 382.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M905.0 520.0 L905.0 462.0 L1170.0 462.0 L1170.0 382.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1225.0 520.0 L1225.0 382.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1545.0 520.0 L1545.0 462.0 L1280.0 462.0 L1280.0 382.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1865.0 520.0 L1865.0 422.0 L1335.0 422.0 L1335.0 382.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1115.0 1016.0 L1115.0 986.0 L585.0 986.0 L585.0 896.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#zone)"/>
+<path d="M1170.0 1016.0 L1170.0 951.0 L905.0 951.0 L905.0 680.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1225.0 800.0 L1225.0 1016.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1545.0 680.0 L1545.0 951.0 L1280.0 951.0 L1280.0 1016.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1865.0 752.0 L1865.0 986.0 L1335.0 986.0 L1335.0 1016.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#zone)"/>
+<path d="M1075.0 1092.0 L426.0 1092.0 L426.0 226.0 L1075.0 226.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M720.0 620.0 L770.0 620.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#many)" marker-end="url(#one)"/>
+<path d="M1470.0 1108.0 L1375.0 1108.0" fill="none" stroke="#54708e" stroke-width="1.6" marker-start="url(#zone)" marker-end="url(#one)"/>
+<text x="215.0" y="409.0" class="rlabel" text-anchor="start">institucion_id</text>
+<text x="593.0" y="506.0" class="rlabel" text-anchor="start">conductor_id</text>
+<text x="913.0" y="506.0" class="rlabel" text-anchor="start">usuario_id</text>
+<text x="1233.0" y="506.0" class="rlabel" text-anchor="start">pasajero_id</text>
+<text x="1553.0" y="506.0" class="rlabel" text-anchor="start">autor_id</text>
+<text x="1873.0" y="506.0" class="rlabel" text-anchor="start">usuario_id</text>
+<text x="593.0" y="914.0" class="rlabel" text-anchor="start">trayecto_id (opcional)</text>
+<text x="913.0" y="698.0" class="rlabel" text-anchor="start">vehiculo_id + conductor_id</text>
+<text x="1233.0" y="818.0" class="rlabel" text-anchor="start">viaje_id</text>
+<text x="1553.0" y="698.0" class="rlabel" text-anchor="start">viaje_id</text>
+<text x="1873.0" y="770.0" class="rlabel" text-anchor="start">viaje_id (opcional)</text>
+<text x="1045.0" y="1084.0" class="rlabel" text-anchor="end">conductor_id</text>
+<text x="1385.0" y="1100.0" class="rlabel" text-anchor="start">viaje_id</text>
+<g><rect x="60" y="200" width="290" height="160" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M60 212 a12 12 0 0 1 12 -12 h266 a12 12 0 0 1 12 12 v28 h-290z" fill="#426889"/>
+<text x="76" y="226" class="tname">instituciones</text>
+<rect x="70" y="245" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="81.0" y="255.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="100" y="256.5" class="col" font-weight="600">id</text>
+<text x="338" y="256.5" class="type" text-anchor="end">int</text>
+<rect x="61" y="264" width="288" height="24" fill="#f7f9fc"/>
+<text x="100" y="280.5" class="col">nombre</text>
+<text x="338" y="280.5" class="type" text-anchor="end">varchar(150)</text>
+<rect x="70" y="293" width="22" height="14" rx="4" fill="#e3f1e1"/>
+<text x="81.0" y="303.5" class="badge" fill="#3d6b3a" text-anchor="middle">UQ</text>
+<text x="100" y="304.5" class="col">schema_nombre</text>
+<text x="338" y="304.5" class="type" text-anchor="end">varchar(63)</text>
+<rect x="61" y="312" width="288" height="24" fill="#f7f9fc"/>
+<text x="100" y="328.5" class="col">activo</text>
+<text x="338" y="328.5" class="type" text-anchor="end">bool</text>
+<text x="100" y="352.5" class="col">creado_en</text>
+<text x="338" y="352.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="60" y="450" width="290" height="160" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M60 462 a12 12 0 0 1 12 -12 h266 a12 12 0 0 1 12 12 v28 h-290z" fill="#426889"/>
+<text x="76" y="476" class="tname">dominios_permitidos</text>
+<rect x="70" y="495" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="81.0" y="505.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="100" y="506.5" class="col" font-weight="600">id</text>
+<text x="338" y="506.5" class="type" text-anchor="end">int</text>
+<rect x="61" y="514" width="288" height="24" fill="#f7f9fc"/>
+<rect x="70" y="519" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="81.0" y="529.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="100" y="530.5" class="col">institucion_id</text>
+<text x="338" y="530.5" class="type" text-anchor="end">int</text>
+<rect x="70" y="543" width="22" height="14" rx="4" fill="#e3f1e1"/>
+<text x="81.0" y="553.5" class="badge" fill="#3d6b3a" text-anchor="middle">UQ</text>
+<text x="100" y="554.5" class="col">dominio</text>
+<text x="338" y="554.5" class="type" text-anchor="end">citext</text>
+<rect x="61" y="562" width="288" height="24" fill="#f7f9fc"/>
+<text x="100" y="578.5" class="col">activo</text>
+<text x="338" y="578.5" class="type" text-anchor="end">bool</text>
+<text x="100" y="602.5" class="col">creado_en</text>
+<text x="338" y="602.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="1075" y="150" width="300" height="232" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M1075 162 a12 12 0 0 1 12 -12 h276 a12 12 0 0 1 12 12 v28 h-300z" fill="#3c787e"/>
+<text x="1091" y="176" class="tname">usuarios</text>
+<rect x="1085" y="195" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="1096.0" y="205.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="1115" y="206.5" class="col" font-weight="600">id</text>
+<text x="1363" y="206.5" class="type" text-anchor="end">int</text>
+<rect x="1076" y="214" width="298" height="24" fill="#f7f9fc"/>
+<rect x="1085" y="219" width="22" height="14" rx="4" fill="#e3f1e1"/>
+<text x="1096.0" y="229.5" class="badge" fill="#3d6b3a" text-anchor="middle">UQ</text>
+<text x="1115" y="230.5" class="col">correo</text>
+<text x="1363" y="230.5" class="type" text-anchor="end">citext</text>
+<text x="1115" y="254.5" class="col">password_hash</text>
+<text x="1363" y="254.5" class="type" text-anchor="end">varchar(255)</text>
+<rect x="1076" y="262" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="278.5" class="col">nombre_visible</text>
+<text x="1363" y="278.5" class="type" text-anchor="end">varchar(100)</text>
+<text x="1115" y="302.5" class="col">rol</text>
+<text x="1363" y="302.5" class="type" text-anchor="end">rol_usuario</text>
+<rect x="1076" y="310" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="326.5" class="col">acepto_terminos_en</text>
+<text x="1363" y="326.5" class="type" text-anchor="end">timestamptz</text>
+<text x="1115" y="350.5" class="col">activo</text>
+<text x="1363" y="350.5" class="type" text-anchor="end">bool</text>
+<rect x="1076" y="358" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="374.5" class="col">creado_en</text>
+<text x="1363" y="374.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="450" y="520" width="270" height="376" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M450 532 a12 12 0 0 1 12 -12 h246 a12 12 0 0 1 12 12 v28 h-270z" fill="#3c787e"/>
+<text x="466" y="546" class="tname">trayectos</text>
+<rect x="460" y="565" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="471.0" y="575.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="490" y="576.5" class="col" font-weight="600">id</text>
+<text x="708" y="576.5" class="type" text-anchor="end">int</text>
+<rect x="451" y="584" width="268" height="24" fill="#f7f9fc"/>
+<rect x="460" y="589" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="471.0" y="599.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="490" y="600.5" class="col">conductor_id</text>
+<text x="708" y="600.5" class="type" text-anchor="end">int</text>
+<rect x="460" y="613" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="471.0" y="623.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="490" y="624.5" class="col">vehiculo_id</text>
+<text x="708" y="624.5" class="type" text-anchor="end">int</text>
+<rect x="451" y="632" width="268" height="24" fill="#f7f9fc"/>
+<text x="490" y="648.5" class="col">nombre</text>
+<text x="708" y="648.5" class="type" text-anchor="end">varchar(80)</text>
+<text x="490" y="672.5" class="col">origen_lat · lng</text>
+<text x="708" y="672.5" class="type" text-anchor="end">numeric(9,6)</text>
+<rect x="451" y="680" width="268" height="24" fill="#f7f9fc"/>
+<text x="490" y="696.5" class="col">origen_texto</text>
+<text x="708" y="696.5" class="type" text-anchor="end">varchar(200)</text>
+<text x="490" y="720.5" class="col">destino_lat · lng</text>
+<text x="708" y="720.5" class="type" text-anchor="end">numeric(9,6)</text>
+<rect x="451" y="728" width="268" height="24" fill="#f7f9fc"/>
+<text x="490" y="744.5" class="col">destino_texto</text>
+<text x="708" y="744.5" class="type" text-anchor="end">varchar(200)</text>
+<text x="490" y="768.5" class="col">polilinea</text>
+<text x="708" y="768.5" class="type" text-anchor="end">text</text>
+<rect x="451" y="776" width="268" height="24" fill="#f7f9fc"/>
+<text x="490" y="792.5" class="col">distancia_km</text>
+<text x="708" y="792.5" class="type" text-anchor="end">numeric(6,2)</text>
+<text x="490" y="816.5" class="col">duracion_min</text>
+<text x="708" y="816.5" class="type" text-anchor="end">int</text>
+<rect x="451" y="824" width="268" height="24" fill="#f7f9fc"/>
+<text x="490" y="840.5" class="col">asientos</text>
+<text x="708" y="840.5" class="type" text-anchor="end">smallint</text>
+<text x="490" y="864.5" class="col">hora_habitual</text>
+<text x="708" y="864.5" class="type" text-anchor="end">time</text>
+<rect x="451" y="872" width="268" height="24" fill="#f7f9fc"/>
+<text x="490" y="888.5" class="col">creado_en</text>
+<text x="708" y="888.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="770" y="520" width="270" height="160" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M770 532 a12 12 0 0 1 12 -12 h246 a12 12 0 0 1 12 12 v28 h-270z" fill="#3c787e"/>
+<text x="786" y="546" class="tname">vehiculos</text>
+<rect x="780" y="565" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="791.0" y="575.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="810" y="576.5" class="col" font-weight="600">id</text>
+<text x="1028" y="576.5" class="type" text-anchor="end">int</text>
+<rect x="771" y="584" width="268" height="24" fill="#f7f9fc"/>
+<rect x="780" y="589" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="791.0" y="599.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="810" y="600.5" class="col">usuario_id</text>
+<text x="1028" y="600.5" class="type" text-anchor="end">int</text>
+<text x="810" y="624.5" class="col">placa_o_descripcion</text>
+<text x="1028" y="624.5" class="type" text-anchor="end">varchar(100)</text>
+<rect x="771" y="632" width="268" height="24" fill="#f7f9fc"/>
+<text x="810" y="648.5" class="col">asientos</text>
+<text x="1028" y="648.5" class="type" text-anchor="end">smallint 1–4</text>
+<text x="810" y="672.5" class="col">activo</text>
+<text x="1028" y="672.5" class="type" text-anchor="end">bool</text>
+</g>
+<g><rect x="1090" y="520" width="270" height="280" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M1090 532 a12 12 0 0 1 12 -12 h246 a12 12 0 0 1 12 12 v28 h-270z" fill="#3c787e"/>
+<text x="1106" y="546" class="tname">reservas</text>
+<rect x="1100" y="565" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="1111.0" y="575.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="1130" y="576.5" class="col" font-weight="600">id</text>
+<text x="1348" y="576.5" class="type" text-anchor="end">int</text>
+<rect x="1091" y="584" width="268" height="24" fill="#f7f9fc"/>
+<rect x="1100" y="589" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1111.0" y="599.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1130" y="600.5" class="col">viaje_id</text>
+<text x="1348" y="600.5" class="type" text-anchor="end">int</text>
+<rect x="1100" y="613" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1111.0" y="623.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1130" y="624.5" class="col">pasajero_id</text>
+<text x="1348" y="624.5" class="type" text-anchor="end">int</text>
+<rect x="1091" y="632" width="268" height="24" fill="#f7f9fc"/>
+<text x="1130" y="648.5" class="col">recogida_lat · lng</text>
+<text x="1348" y="648.5" class="type" text-anchor="end">numeric(9,6)</text>
+<text x="1130" y="672.5" class="col">recogida_texto</text>
+<text x="1348" y="672.5" class="type" text-anchor="end">varchar(200)</text>
+<rect x="1091" y="680" width="268" height="24" fill="#f7f9fc"/>
+<text x="1130" y="696.5" class="col">bajada_lat · lng</text>
+<text x="1348" y="696.5" class="type" text-anchor="end">numeric(9,6)</text>
+<text x="1130" y="720.5" class="col">distancia_pie_m</text>
+<text x="1348" y="720.5" class="type" text-anchor="end">int</text>
+<rect x="1091" y="728" width="268" height="24" fill="#f7f9fc"/>
+<text x="1130" y="744.5" class="col">estado</text>
+<text x="1348" y="744.5" class="type" text-anchor="end">estado_reserva</text>
+<text x="1130" y="768.5" class="col">solicitada_en</text>
+<text x="1348" y="768.5" class="type" text-anchor="end">timestamptz</text>
+<rect x="1091" y="776" width="268" height="24" fill="#f7f9fc"/>
+<text x="1130" y="792.5" class="col">respondida_en</text>
+<text x="1348" y="792.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="1410" y="520" width="270" height="160" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M1410 532 a12 12 0 0 1 12 -12 h246 a12 12 0 0 1 12 12 v28 h-270z" fill="#3c787e"/>
+<text x="1426" y="546" class="tname">mensajes</text>
+<rect x="1420" y="565" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="1431.0" y="575.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="1450" y="576.5" class="col" font-weight="600">id</text>
+<text x="1668" y="576.5" class="type" text-anchor="end">int</text>
+<rect x="1411" y="584" width="268" height="24" fill="#f7f9fc"/>
+<rect x="1420" y="589" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1431.0" y="599.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1450" y="600.5" class="col">viaje_id</text>
+<text x="1668" y="600.5" class="type" text-anchor="end">int</text>
+<rect x="1420" y="613" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1431.0" y="623.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1450" y="624.5" class="col">autor_id</text>
+<text x="1668" y="624.5" class="type" text-anchor="end">int</text>
+<rect x="1411" y="632" width="268" height="24" fill="#f7f9fc"/>
+<text x="1450" y="648.5" class="col">texto</text>
+<text x="1668" y="648.5" class="type" text-anchor="end">varchar(500)</text>
+<text x="1450" y="672.5" class="col">enviado_en</text>
+<text x="1668" y="672.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="1730" y="520" width="270" height="232" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M1730 532 a12 12 0 0 1 12 -12 h246 a12 12 0 0 1 12 12 v28 h-270z" fill="#3c787e"/>
+<text x="1746" y="546" class="tname">notificaciones</text>
+<rect x="1740" y="565" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="1751.0" y="575.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="1770" y="576.5" class="col" font-weight="600">id</text>
+<text x="1988" y="576.5" class="type" text-anchor="end">int</text>
+<rect x="1731" y="584" width="268" height="24" fill="#f7f9fc"/>
+<rect x="1740" y="589" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1751.0" y="599.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1770" y="600.5" class="col">usuario_id</text>
+<text x="1988" y="600.5" class="type" text-anchor="end">int</text>
+<rect x="1740" y="613" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1751.0" y="623.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1770" y="624.5" class="col">viaje_id</text>
+<text x="1988" y="624.5" class="type" text-anchor="end">int</text>
+<rect x="1731" y="632" width="268" height="24" fill="#f7f9fc"/>
+<text x="1770" y="648.5" class="col">tipo</text>
+<text x="1988" y="648.5" class="type" text-anchor="end">varchar(40)</text>
+<text x="1770" y="672.5" class="col">titulo</text>
+<text x="1988" y="672.5" class="type" text-anchor="end">varchar(120)</text>
+<rect x="1731" y="680" width="268" height="24" fill="#f7f9fc"/>
+<text x="1770" y="696.5" class="col">mensaje</text>
+<text x="1988" y="696.5" class="type" text-anchor="end">varchar(1000)</text>
+<text x="1770" y="720.5" class="col">leida_en</text>
+<text x="1988" y="720.5" class="type" text-anchor="end">timestamptz</text>
+<rect x="1731" y="728" width="268" height="24" fill="#f7f9fc"/>
+<text x="1770" y="744.5" class="col">creada_en</text>
+<text x="1988" y="744.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="1075" y="1016" width="300" height="568" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M1075 1028 a12 12 0 0 1 12 -12 h276 a12 12 0 0 1 12 12 v28 h-300z" fill="#3c787e"/>
+<text x="1091" y="1042" class="tname">viajes</text>
+<rect x="1085" y="1061" width="22" height="14" rx="4" fill="#fde6d8"/>
+<text x="1096.0" y="1071.5" class="badge" fill="#9a3d12" text-anchor="middle">PK</text>
+<text x="1115" y="1072.5" class="col" font-weight="600">id</text>
+<text x="1363" y="1072.5" class="type" text-anchor="end">int</text>
+<rect x="1076" y="1080" width="298" height="24" fill="#f7f9fc"/>
+<rect x="1085" y="1085" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1096.0" y="1095.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1115" y="1096.5" class="col">conductor_id</text>
+<text x="1363" y="1096.5" class="type" text-anchor="end">int</text>
+<rect x="1085" y="1109" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1096.0" y="1119.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1115" y="1120.5" class="col">vehiculo_id</text>
+<text x="1363" y="1120.5" class="type" text-anchor="end">int</text>
+<rect x="1076" y="1128" width="298" height="24" fill="#f7f9fc"/>
+<rect x="1085" y="1133" width="22" height="14" rx="4" fill="#e1ecf7"/>
+<text x="1096.0" y="1143.5" class="badge" fill="#2d5a85" text-anchor="middle">FK</text>
+<text x="1115" y="1144.5" class="col">trayecto_id</text>
+<text x="1363" y="1144.5" class="type" text-anchor="end">int · null</text>
+<text x="1115" y="1168.5" class="col">origen_lat · lng</text>
+<text x="1363" y="1168.5" class="type" text-anchor="end">numeric(9,6)</text>
+<rect x="1076" y="1176" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1192.5" class="col">origen_texto</text>
+<text x="1363" y="1192.5" class="type" text-anchor="end">varchar(200)</text>
+<text x="1115" y="1216.5" class="col">destino_lat · lng</text>
+<text x="1363" y="1216.5" class="type" text-anchor="end">numeric(9,6)</text>
+<rect x="1076" y="1224" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1240.5" class="col">destino_texto</text>
+<text x="1363" y="1240.5" class="type" text-anchor="end">varchar(200)</text>
+<text x="1115" y="1264.5" class="col">polilinea</text>
+<text x="1363" y="1264.5" class="type" text-anchor="end">text</text>
+<rect x="1076" y="1272" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1288.5" class="col">distancia_km</text>
+<text x="1363" y="1288.5" class="type" text-anchor="end">numeric(6,2)</text>
+<text x="1115" y="1312.5" class="col">duracion_min</text>
+<text x="1363" y="1312.5" class="type" text-anchor="end">int</text>
+<rect x="1076" y="1320" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1336.5" class="col">salida_en</text>
+<text x="1363" y="1336.5" class="type" text-anchor="end">timestamptz</text>
+<text x="1115" y="1360.5" class="col">asientos_ofrecidos</text>
+<text x="1363" y="1360.5" class="type" text-anchor="end">smallint 1–4</text>
+<rect x="1076" y="1368" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1384.5" class="col">asientos_disponibles</text>
+<text x="1363" y="1384.5" class="type" text-anchor="end">smallint</text>
+<text x="1115" y="1408.5" class="col">costo_referencia</text>
+<text x="1363" y="1408.5" class="type" text-anchor="end">numeric(8,2)</text>
+<rect x="1076" y="1416" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1432.5" class="col">estado</text>
+<text x="1363" y="1432.5" class="type" text-anchor="end">estado_viaje</text>
+<text x="1115" y="1456.5" class="col">iniciado_en</text>
+<text x="1363" y="1456.5" class="type" text-anchor="end">timestamptz</text>
+<rect x="1076" y="1464" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1480.5" class="col">reservas_cierran_en</text>
+<text x="1363" y="1480.5" class="type" text-anchor="end">timestamptz</text>
+<text x="1115" y="1504.5" class="col">finalizado_en</text>
+<text x="1363" y="1504.5" class="type" text-anchor="end">timestamptz</text>
+<rect x="1076" y="1512" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1528.5" class="col">cancelado_en</text>
+<text x="1363" y="1528.5" class="type" text-anchor="end">timestamptz</text>
+<text x="1115" y="1552.5" class="col">motivo_cancelacion</text>
+<text x="1363" y="1552.5" class="type" text-anchor="end">varchar(300)</text>
+<rect x="1076" y="1560" width="298" height="24" fill="#f7f9fc"/>
+<text x="1115" y="1576.5" class="col">creado_en</text>
+<text x="1363" y="1576.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+<g><rect x="1470" y="1056" width="270" height="136" rx="12" fill="#fff" stroke="#c5d4e3" stroke-width="1.3"/>
+<path d="M1470 1068 a12 12 0 0 1 12 -12 h246 a12 12 0 0 1 12 12 v28 h-270z" fill="#3c787e"/>
+<text x="1486" y="1082" class="tname">ubicaciones_viaje</text>
+<rect x="1480" y="1101" width="40" height="14" rx="4" fill="#fde6d8"/>
+<text x="1500.0" y="1111.5" class="badge" fill="#9a3d12" text-anchor="middle">PK FK</text>
+<text x="1526" y="1112.5" class="col" font-weight="600">viaje_id</text>
+<text x="1728" y="1112.5" class="type" text-anchor="end">int</text>
+<rect x="1471" y="1120" width="268" height="24" fill="#f7f9fc"/>
+<text x="1510" y="1136.5" class="col">lat · lng</text>
+<text x="1728" y="1136.5" class="type" text-anchor="end">numeric(9,6)</text>
+<text x="1510" y="1160.5" class="col">precision_m</text>
+<text x="1728" y="1160.5" class="type" text-anchor="end">int</text>
+<rect x="1471" y="1168" width="268" height="24" fill="#f7f9fc"/>
+<text x="1510" y="1184.5" class="col">actualizada_en</text>
+<text x="1728" y="1184.5" class="type" text-anchor="end">timestamptz</text>
+</g>
+</svg>

@@ -11,7 +11,7 @@ const SECCION = {
 }
 
 /**
- * Navegación de escritorio (≥ 1024 px): barra lateral fija con las mismas 3 opciones que la
+ * Navegación de escritorio (≥ 1024 px): barra lateral fija con las mismas opciones que la
  * navegación inferior del celular. Se monta una vez, fuera de la transición entre pantallas.
  */
 export function SideNav({ page, navigate }) {

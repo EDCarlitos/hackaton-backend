@@ -1,4 +1,4 @@
-# RutaCaribe — Frontend
+# Yendo — Frontend
 
 React 19 + Vite + Tailwind 4. Diseño móvil primero (ver `DESIGN.MD`). Consume el API de `../Backend`.
 
@@ -34,7 +34,7 @@ frontend solo dibuja la polilínea guardada.
 
 ## Pantallas ↔ requisitos
 
-El diseño sale de Figma (archivo `rutacaribe`): Login, Inicio, Detalle del viaje (pasajero y conductor) y Mis viajes. La navegación inferior es Inicio · Publicar · Mis viajes; Impacto se abre desde el perfil. Las pantallas que no están en Figma (Publicar, Impacto y los modales) usan las mismas piezas.
+El diseño sale de Figma: Login, Inicio, Detalle del viaje (pasajero y conductor) y Mis viajes. La navegación inferior es Inicio · Publicar · Mis viajes; "Tu impacto" se abre desde el ícono de usuario (perfil). Las pantallas que no están en Figma (Publicar, Impacto y los modales) usan las mismas piezas.
 
 | Pantalla | Archivo | Requisitos |
 |---|---|---|
@@ -44,7 +44,7 @@ El diseño sale de Figma (archivo `rutacaribe`): Login, Inicio, Detalle del viaj
 | Mis viajes | `pages/HistoryPage.jsx` + `modals/RepublishModal.jsx` | RF-08, RF-10 |
 | Detalle (conductor) | `pages/DriverDetailPage.jsx` + `trip/LiveLocationCard.jsx` | RF-11, RF-16, RF-17, RF-18, RF-21, RF-23 (chat), ubicación en vivo (opcional, solo con la app abierta) |
 | Detalle (pasajero) | `pages/TripDetailPage.jsx` | RF-15 (cancelar), RF-18, RF-23 (chat), conductor en vivo en el mapa (si está confirmado) |
-| Impacto (desde el perfil) | `pages/ImpactPage.jsx` | RF-23, RF-24 (fórmula, factor, fuente y supuestos; "Estimación") |
+| Tu impacto (desde el perfil) | `pages/ImpactPage.jsx` | Huella de carbono en **mockup** (datos de ejemplo: emitido vs. evitado, equivalencias, meta y ranking) + RF-24 real (fórmula, factor, fuente y supuestos de `GET /impacto`) |
 | Perfil | `modals/ProfileModal.jsx` | RF-03, RNF-04 (aviso de privacidad) |
 | Notificaciones | `modals/NotificationsModal.jsx` | Avisos de RF-11, RF-16, RF-21 |
 

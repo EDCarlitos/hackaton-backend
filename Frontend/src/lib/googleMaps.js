@@ -25,7 +25,7 @@ export function cargarGoogleMaps() {
   if (window.google?.maps?.Map) return Promise.resolve(window.google.maps)
   if (!promesa) {
     promesa = new Promise((resolve, reject) => {
-      const callback = '__rutacaribeMapsListo'
+      const callback = '__yendoMapsListo'
       window[callback] = () => resolve(window.google.maps)
       const script = document.createElement('script')
       script.src =

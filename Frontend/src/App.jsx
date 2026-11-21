@@ -30,7 +30,7 @@ function App() {
     <div className="prototype">
       {estado === 'cargando' && (
         <PhoneFrame className="app-screen">
-          <Loading texto="Abriendo RutaCaribe…" />
+          <Loading texto="Abriendo Yendo…" />
         </PhoneFrame>
       )}
       {estado === 'anonimo' && <LoginPage />}

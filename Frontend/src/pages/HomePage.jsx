@@ -20,7 +20,7 @@ import { HORAS_BUSQUEDA, ORDENES, resolverHora } from '../lib/horas'
 import { ESTADO_RESERVA, formatCostoCorto, formatDia, formatMetros, formatRangoHora, tonoEstado } from '../lib/format'
 
 const MODALS = { FILTROS: 'filtros', NOTIFICATIONS: 'notifications', PROFILE: 'profile' }
-const CLAVE_BUSQUEDA = 'rutacaribe.busqueda'
+const CLAVE_BUSQUEDA = 'yendo.busqueda'
 const HORA_INICIAL = { id: 'cualquiera', otra: '' }
 
 // Recogida, bajada y orden de la última búsqueda (solo en este navegador). La hora arranca en "Cualquier hora".

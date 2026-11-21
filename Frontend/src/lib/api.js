@@ -2,7 +2,7 @@
 // los errores del API ({ error: { codigo, mensaje, detalles } }) en ApiError.
 
 const BASE = import.meta.env.VITE_API_URL || '/api'
-const TOKEN_KEY = 'rutacaribe.token'
+const TOKEN_KEY = 'yendo.token'
 
 export class ApiError extends Error {
   constructor({ status, codigo, mensaje, detalles }) {

@@ -1,0 +1,28 @@
+%% Ciclo de vida del viaje y de la reserva.
+stateDiagram-v2
+  direction LR
+  state "Viaje" as V {
+    [*] --> abierto: publicar / Salgo hoy
+    abierto --> lleno: se confirma el último asiento
+    lleno --> abierto: un pasajero confirmado cancela
+    abierto --> cancelado: el conductor cancela
+    lleno --> cancelado: el conductor cancela
+    abierto --> finalizado: cierre automático
+    lleno --> finalizado: cierre automático
+    en_curso --> finalizado: cierre automático
+    finalizado --> [*]
+    cancelado --> [*]
+  }
+  state "Reserva" as R {
+    [*] --> solicitada: el pasajero pide asiento
+    solicitada --> confirmada: el conductor acepta
+    solicitada --> rechazada: el conductor rechaza o el viaje se llena
+    solicitada --> cancelada: el pasajero la retira o se cancela el viaje
+    solicitada --> expirada: el viaje salió sin respuesta
+    confirmada --> cancelada: el pasajero cancela o se cancela el viaje
+    confirmada --> completada: cierre automático
+    completada --> [*]
+    rechazada --> [*]
+    cancelada --> [*]
+    expirada --> [*]
+  }

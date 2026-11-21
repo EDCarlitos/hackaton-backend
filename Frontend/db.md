@@ -1,4 +1,4 @@
-Project RutaCaribe {
+Project Yendo {
 database_type: 'PostgreSQL'
 Note: '''
 Multi-tenant por schema.
@@ -75,7 +75,7 @@ correo citext [not null, unique]
 password_hash varchar(255) [not null, note: 'bcrypt']
 activo boolean [not null, default: true]
 creado_en timestamptz [not null, default: now()]
-Note: 'Superadmins de RutaCaribe (dan de alta instituciones y dominios). No pertenecen a ningún tenant.'
+Note: 'Superadmins de Yendo (dan de alta instituciones y dominios). No pertenecen a ningún tenant.'
 }
 
 // ===================== SCHEMA TENANT (uno por institución) =====================

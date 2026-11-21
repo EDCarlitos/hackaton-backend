@@ -1,0 +1,24 @@
+%% Cancelaciones (RF-11 y RF-15). Todo en una transacción y con aviso a la otra parte.
+flowchart TD
+  A([Alguien cancela]):::inicio --> B{¿Quién?}:::decision
+  B -- Conductor cancela el viaje --> C1{¿Es el conductor<br/>del viaje?}:::decision
+  C1 -- No --> E1[403 NO_ES_CONDUCTOR]:::error
+  C1 -- Sí --> C2{¿Viaje abierto o lleno?}:::decision
+  C2 -- No --> E2[409 VIAJE_NO_CANCELABLE]:::error
+  C2 -- Sí --> C3[Viaje → cancelado<br/>con motivo opcional]:::paso
+  C3 --> C4[Reservas solicitadas y confirmadas<br/>→ canceladas]:::paso
+  C4 --> C5[Aviso a cada pasajero afectado<br/>incluye el motivo]:::ok
+  B -- Pasajero cancela su reserva --> P1[Bloquea viaje → reserva]:::paso
+  P1 --> P2{¿Reserva vigente y<br/>el viaje no ha salido?}:::decision
+  P2 -- No --> E3[409 RESERVA_NO_CANCELABLE]:::error
+  P2 -- Sí --> P3[Reserva → cancelada]:::paso
+  P3 --> P4{¿Estaba confirmada?}:::decision
+  P4 -- Sí --> P5[Devuelve el asiento<br/>si el viaje estaba lleno vuelve a abierto]:::ok
+  P4 -- No --> P6
+  P5 --> P6[Aviso al conductor:<br/>«Un pasajero canceló» o «Solicitud retirada»]:::ok
+  classDef paso fill:#ffffff,stroke:#9fb4c9,color:#14243a
+  classDef decision fill:#eaf0f7,stroke:#54708e,color:#14243a
+  classDef ok fill:#e8f1f1,stroke:#3c787e,color:#1f4a4e,font-weight:bold
+  classDef error fill:#fdeced,stroke:#f15156,color:#8f2226
+  classDef externo fill:#fff7e6,stroke:#d9a441,color:#5a4310
+  classDef inicio fill:#426889,stroke:#426889,color:#ffffff,font-weight:bold

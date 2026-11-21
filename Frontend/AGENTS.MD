@@ -1,10 +1,10 @@
-RutaCaribe MVP: 
+Yendo MVP: 
 
 Versión 1.0 · Track: Medio ambiente · Estado: borrador para el equipo 
 
 1. Descripción del proyecto 
 
-RutaCaribe es una aplicación web donde estudiantes verificados con auto publican el trayecto que ya hacen a diario (commute), y compañeros verificados encuentran viajes cuya ruta pasa cerca de su punto de recogida, solicitan un asiento y viajan juntos. 
+Yendo es una aplicación web donde estudiantes verificados con auto publican el trayecto que ya hacen a diario (commute), y compañeros verificados encuentran viajes cuya ruta pasa cerca de su punto de recogida, solicitan un asiento y viajan juntos. 
 
 1.1 Problema 
 

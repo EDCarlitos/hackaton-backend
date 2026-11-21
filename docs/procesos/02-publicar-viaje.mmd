@@ -1,0 +1,28 @@
+%% Publicar un viaje (RF-05 a RF-09). Google se consulta solo en la publicación nueva.
+flowchart TD
+  A([Conductor quiere publicar]):::inicio --> B{¿Cómo publica?}:::decision
+  B -- Viaje nuevo --> N1[Elige origen y destino en el mapa,<br/>hora, asientos y costo opcional]:::paso
+  N1 --> N2[Redondea origen y destino a ~100 m<br/>privacidad del domicilio]:::paso
+  N2 --> N3{¿Vehículo activo y<br/>asientos ≤ los del vehículo?}:::decision
+  N3 -- No --> E1[400 VEHICULO_REQUERIDO o VALIDACION<br/>409 VEHICULO_INACTIVO]:::error
+  N3 -- Sí --> G[Calcula la ruta UNA vez<br/>Google Routes API · fuera de la transacción]:::externo
+  G --> G2{¿Hay ruta?}:::decision
+  G2 -- No --> E2[400 RUTA_NO_ENCONTRADA<br/>502 MAPAS_NO_DISPONIBLE]:::error
+  G2 -- Sí --> T
+  B -- «Salgo hoy» con plantilla --> S1[Elige su trayecto guardado<br/>y la hora de hoy]:::paso
+  S1 --> S2{¿La hora ya pasó?}:::decision
+  S2 -- Sí --> E3[409 HORA_YA_PASO]:::error
+  S2 -- No --> R[Reutiliza la polilínea guardada<br/>sin llamar a Google]:::ok
+  B -- Publicar de nuevo --> P1[Elige un viaje anterior<br/>y la nueva fecha]:::paso
+  P1 --> R
+  R --> T
+  T[Transacción del tenant:<br/>bloquea al conductor FOR NO KEY UPDATE]:::paso --> T2{¿Se cruza con otro viaje<br/>activo suyo?}:::decision
+  T2 -- Sí --> E4[409 VIAJE_TRASLAPADO]:::error
+  T2 -- No --> T3[Guarda el viaje: estado abierto,<br/>polilínea, distancia y duración]:::ok
+  T3 --> F([Visible para los pasajeros]):::inicio
+  classDef paso fill:#ffffff,stroke:#9fb4c9,color:#14243a
+  classDef decision fill:#eaf0f7,stroke:#54708e,color:#14243a
+  classDef ok fill:#e8f1f1,stroke:#3c787e,color:#1f4a4e,font-weight:bold
+  classDef error fill:#fdeced,stroke:#f15156,color:#8f2226
+  classDef externo fill:#fff7e6,stroke:#d9a441,color:#5a4310
+  classDef inicio fill:#426889,stroke:#426889,color:#ffffff,font-weight:bold

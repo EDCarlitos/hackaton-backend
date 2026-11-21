@@ -1,0 +1,43 @@
+%% Proceso general de un viaje compartido en Yendo (de punta a punta).
+flowchart LR
+  subgraph COND["Conductor"]
+    direction TB
+    c1([Inicia sesión]):::inicio --> c2[Publica un viaje<br/>o usa «Salgo hoy»]:::paso
+    c5{¿Acepta la<br/>solicitud?}:::decision
+    c8[Chat del viaje y<br/>ubicación en vivo opcional]:::paso
+  end
+  subgraph SIS["Sistema Yendo"]
+    direction TB
+    s1[Calcula la ruta una sola vez<br/>Google Routes API]:::externo --> s2[Viaje abierto<br/>visible en búsquedas]:::ok
+    s3[Filtra viajes compatibles<br/>≤ 400 m de la ruta · ±15 min<br/>recogida antes que bajada]:::paso
+    s4[Crea la solicitud<br/>y avisa al conductor]:::paso
+    s6[Confirma, descuenta el asiento<br/>y avisa al pasajero]:::ok
+    s7[Rechaza y avisa<br/>al pasajero]:::error
+    s9[Cierre automático<br/>salida + 60 min]:::paso
+    s10[Reserva completada<br/>suma al CO₂ evitado]:::ok
+  end
+  subgraph PAS["Pasajero"]
+    direction TB
+    p1([Inicia sesión]):::inicio --> p2[Busca: punto de recogida,<br/>bajada opcional y hora]:::paso
+    p3[Elige un viaje<br/>y pide un asiento]:::paso
+    p9[Camina al punto de abordaje<br/>y viajan juntos]:::paso
+  end
+  c2 --> s1
+  p2 --> s3
+  s2 -.-> s3
+  s3 --> p3
+  p3 --> s4
+  s4 --> c5
+  c5 -- Sí --> s6
+  c5 -- No --> s7
+  s6 --> c8
+  s6 --> p9
+  p9 --> s9
+  c8 --> s9
+  s9 --> s10
+  classDef paso fill:#ffffff,stroke:#9fb4c9,color:#14243a
+  classDef decision fill:#eaf0f7,stroke:#54708e,color:#14243a
+  classDef ok fill:#e8f1f1,stroke:#3c787e,color:#1f4a4e,font-weight:bold
+  classDef error fill:#fdeced,stroke:#f15156,color:#8f2226
+  classDef externo fill:#fff7e6,stroke:#d9a441,color:#5a4310
+  classDef inicio fill:#426889,stroke:#426889,color:#ffffff,font-weight:bold

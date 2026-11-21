@@ -2,7 +2,8 @@
  * Versión de escritorio (≥ 1024 px). En celular y tablet no cambia nada: el shell no existe
  * (display: contents) y la barra lateral está oculta. En escritorio:
  *   - barra lateral fija (SideNav) en vez de la navegación inferior;
- *   - contenido centrado con un ancho cómodo de lectura;
+ *   - contenido alineado a la izquierda, junto a la barra, con un ancho máximo cómodo
+ *     (nada se centra a media pantalla);
  *   - listas a dos columnas y detalles con el mapa fijo a la derecha.
  */
 .app-shell {
@@ -15,6 +16,7 @@
 @media (min-width: 1024px) {
   .prototype {
     display: block;
+    place-items: normal;
     padding: 0;
     background: #fff;
   }
@@ -26,6 +28,7 @@
   .app-shell {
     display: grid;
     grid-template-columns: 248px minmax(0, 1fr);
+    width: 100%;
     min-height: 100svh;
   }
   .app-shell > div {
@@ -39,13 +42,13 @@
     box-shadow: none;
   }
   .app-screen {
-    padding: 56px 72px 96px;
+    padding: 48px 56px 96px;
   }
   .app-screen > * {
     width: 100%;
-    max-width: 1000px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: 1120px;
+    margin-left: 0;
+    margin-right: 0;
   }
   .bottom-nav,
   .nav-spacer {
@@ -99,8 +102,7 @@
   }
   .side-nav .side-nav__publish {
     margin-bottom: 16px;
-    justify-content: center;
-    gap: 8px;
+    gap: 12px;
     background: var(--color-coral);
     color: #fff;
     font-weight: 600;
@@ -162,10 +164,9 @@
   /* --- Detalles: información a la izquierda, mapa fijo a la derecha --- */
   .app-screen.detail-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
-    column-gap: 64px;
+    grid-template-columns: minmax(0, 560px) minmax(0, 680px);
+    column-gap: 56px;
     align-content: start;
-    padding-inline: max(72px, calc((100% - 1160px) / 2));
   }
   .app-screen.detail-layout > * {
     grid-column: 1;
@@ -180,7 +181,7 @@
     grid-column: 2;
     grid-row: 2 / span 40;
     position: sticky;
-    top: 56px;
+    top: 48px;
     align-self: start;
     margin-top: 24px;
   }
@@ -193,9 +194,19 @@
     justify-self: stretch;
   }
 
-  /* --- Formularios angostos (publicar, impacto) --- */
+  /* --- Tu impacto (huella de carbono): tarjetas a dos columnas --- */
+  .footprint-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .footprint-grid > section:first-child,
+  .footprint-grid > .footprint-wide {
+    grid-column: 1 / -1;
+  }
+
+  /* --- Formularios angostos (publicar, impacto): también a la izquierda --- */
   .app-screen.narrow-layout > * {
-    max-width: 620px;
+    max-width: 640px;
   }
 
   /* --- Login: tarjeta centrada --- */

@@ -1,0 +1,28 @@
+%% Registro e inicio de sesión: el dominio del correo decide la institución (tenant).
+flowchart TD
+  A([Usuario abre Yendo]):::inicio --> B{¿Tiene cuenta?}:::decision
+  B -- No --> R1[Registro: correo institucional,<br/>contraseña, nombre visible<br/>y aceptación de términos]:::paso
+  R1 --> R2{¿Datos válidos?<br/>contraseña de 8 a 72 bytes}:::decision
+  R2 -- No --> E1[400 VALIDACION]:::error
+  R2 -- Sí --> R3{¿El dominio está en<br/>public.dominios_permitidos<br/>y la institución activa?}:::decision
+  R3 -- No --> E2[403 DOMINIO_NO_PERMITIDO]:::error
+  R3 -- Sí --> R4[Resuelve la institución<br/>→ schema del tenant]:::paso
+  R4 --> R5{¿Correo ya registrado<br/>en ese schema?}:::decision
+  R5 -- Sí --> E3[409 CORREO_DUPLICADO]:::error
+  R5 -- No --> R6[Guarda el usuario<br/>contraseña con bcrypt]:::paso
+  R6 --> T[Emite JWT<br/>sub · institucion_id · rol]:::ok
+  B -- Sí --> L1[Login: correo y contraseña]:::paso
+  L1 --> L2[Dominio → institución → schema]:::paso
+  L2 --> L3{¿Dominio, correo y<br/>contraseña correctos?}:::decision
+  L3 -- No --> E4[401 CREDENCIALES_INVALIDAS<br/>mismo error en todos los casos]:::error
+  L3 -- Sí --> L4{¿Cuenta activa?}:::decision
+  L4 -- No --> E5[403 USUARIO_INACTIVO]:::error
+  L4 -- Sí --> T
+  T --> U[El navegador guarda el token]:::paso
+  U --> V[En cada petición, requireAuth valida el JWT<br/>y lee institución, rol y estado desde la BD]:::ok
+  classDef paso fill:#ffffff,stroke:#9fb4c9,color:#14243a
+  classDef decision fill:#eaf0f7,stroke:#54708e,color:#14243a
+  classDef ok fill:#e8f1f1,stroke:#3c787e,color:#1f4a4e,font-weight:bold
+  classDef error fill:#fdeced,stroke:#f15156,color:#8f2226
+  classDef externo fill:#fff7e6,stroke:#d9a441,color:#5a4310
+  classDef inicio fill:#426889,stroke:#426889,color:#ffffff,font-weight:bold

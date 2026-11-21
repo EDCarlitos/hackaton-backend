@@ -1,0 +1,27 @@
+%% Buscar y pedir asiento (RF-12 a RF-15, RF-22). Las mismas reglas en la búsqueda y al solicitar.
+flowchart TD
+  A([Pasajero busca viaje]):::inicio --> B[Indica punto de recogida,<br/>bajada opcional y hora deseada]:::paso
+  B --> C[SQL: viajes abiertos con asientos,<br/>dentro de ±15 min y que no son suyos]:::paso
+  C --> D[Para cada candidato, en JS con la polilínea guardada:<br/>distancia a pie a la ruta y sentido del recorrido]:::paso
+  D --> E{¿Recogida a ≤ 400 m<br/>y antes que la bajada?}:::decision
+  E -- No --> X[Se descarta]:::error
+  E -- Sí --> F[Resultados ordenados por distancia a pie<br/>y cercanía a la hora]:::ok
+  F --> G[Elige un viaje y pide asiento]:::paso
+  G --> H[Transacción: bloquea el viaje FOR UPDATE]:::paso
+  H --> I{¿Es su propio viaje?}:::decision
+  I -- Sí --> E1[409 ES_TU_VIAJE]:::error
+  I -- No --> J{¿Quedan asientos y<br/>acepta solicitudes?}:::decision
+  J -- No --> E2[409 VIAJE_LLENO<br/>o VIAJE_NO_DISPONIBLE]:::error
+  J -- Sí --> K{¿Ya tiene una reserva vigente<br/>en este viaje o en otro<br/>que se cruce de horario?}:::decision
+  K -- Sí --> E3[409 RESERVA_DUPLICADA<br/>o RESERVA_TRASLAPADA]:::error
+  K -- No --> L{¿Sigue siendo compatible<br/>con la ruta?}:::decision
+  L -- No --> E4[400 FUERA_DE_RUTA<br/>o SENTIDO_CONTRARIO]:::error
+  L -- Sí --> M[Crea la reserva «solicitada»<br/>no descuenta asiento todavía]:::ok
+  M --> N[Aviso al conductor:<br/>Nueva solicitud de asiento]:::paso
+  N --> O([Espera la respuesta]):::inicio
+  classDef paso fill:#ffffff,stroke:#9fb4c9,color:#14243a
+  classDef decision fill:#eaf0f7,stroke:#54708e,color:#14243a
+  classDef ok fill:#e8f1f1,stroke:#3c787e,color:#1f4a4e,font-weight:bold
+  classDef error fill:#fdeced,stroke:#f15156,color:#8f2226
+  classDef externo fill:#fff7e6,stroke:#d9a441,color:#5a4310
+  classDef inicio fill:#426889,stroke:#426889,color:#ffffff,font-weight:bold

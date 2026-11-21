@@ -1,4 +1,4 @@
-# Hackatón (RutaCaribe): monorepo
+# Hackatón (Yendo): monorepo
 
 | Carpeta | Qué es |
 |---|---|

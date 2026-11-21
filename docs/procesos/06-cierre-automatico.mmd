@@ -1,0 +1,22 @@
+%% Cierre automático (RF-20): job dentro del proceso del API, cada CIERRE_INTERVALO_SEG.
+flowchart TD
+  A([Cada 60 s]):::inicio --> B[Lista las instituciones activas<br/>public.instituciones]:::paso
+  B --> C[Para cada schema de institución]:::paso
+  C --> D{¿Viajes abiertos, llenos o en curso<br/>con salida + 60 min ya vencida?}:::decision
+  D -- Sí --> E[Viaje → finalizado]:::ok
+  E --> F[Reservas confirmadas → completada<br/>cuentan para el impacto CO₂]:::ok
+  D -- No --> G
+  F --> G[Solicitudes de viajes que ya salieron<br/>→ expirada]:::paso
+  G --> H[Borra ubicaciones en vivo de viajes<br/>cerrados, cancelados o fuera de horario<br/>sin historial · RNF-03]:::paso
+  H --> I{¿Falló esta institución?}:::decision
+  I -- Sí --> J[Registra el error<br/>y sigue con las demás]:::error
+  I -- No --> K
+  J --> K{¿Quedan instituciones?}:::decision
+  K -- Sí --> C
+  K -- No --> L([Espera al siguiente ciclo]):::inicio
+  classDef paso fill:#ffffff,stroke:#9fb4c9,color:#14243a
+  classDef decision fill:#eaf0f7,stroke:#54708e,color:#14243a
+  classDef ok fill:#e8f1f1,stroke:#3c787e,color:#1f4a4e,font-weight:bold
+  classDef error fill:#fdeced,stroke:#f15156,color:#8f2226
+  classDef externo fill:#fff7e6,stroke:#d9a441,color:#5a4310
+  classDef inicio fill:#426889,stroke:#426889,color:#ffffff,font-weight:bold

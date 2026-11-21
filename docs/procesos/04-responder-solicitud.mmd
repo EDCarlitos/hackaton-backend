@@ -1,0 +1,24 @@
+%% El conductor acepta o rechaza (RF-16, RF-17, RF-21). Sin sobreventa (RNF-05).
+flowchart TD
+  A([Conductor abre la solicitud]):::inicio --> B[Transacción: bloquea primero el viaje<br/>y luego la reserva · orden fijo, sin deadlocks]:::paso
+  B --> C{¿La reserva sigue<br/>«solicitada»?}:::decision
+  C -- No --> E1[409 RESERVA_NO_PENDIENTE]:::error
+  C -- Sí --> D{¿Acepta o rechaza?}:::decision
+  D -- Rechaza --> R1[Reserva → rechazada]:::error
+  R1 --> R2[Aviso al pasajero]:::paso
+  D -- Acepta --> F{¿Quedan asientos y el viaje<br/>acepta reservas?}:::decision
+  F -- No --> E2[409 VIAJE_LLENO<br/>o VIAJE_NO_DISPONIBLE]:::error
+  F -- Sí --> G[Reserva → confirmada<br/>asientos_disponibles − 1]:::ok
+  G --> H{{Trigger trg_reservas_cupo:<br/>¿confirmadas ≤ asientos ofrecidos?}}:::decision
+  H -- No --> E3[Se revierte todo<br/>409 VIAJE_LLENO]:::error
+  H -- Sí --> I{¿Quedó en 0 asientos?}:::decision
+  I -- Sí --> J[Viaje → lleno<br/>las demás solicitudes se rechazan solas<br/>con aviso «El viaje se llenó»]:::paso
+  I -- No --> K
+  J --> K[Aviso al pasajero: «¡Tienes lugar!»<br/>con el punto de recogida]:::ok
+  K --> L([Chat del viaje habilitado]):::inicio
+  classDef paso fill:#ffffff,stroke:#9fb4c9,color:#14243a
+  classDef decision fill:#eaf0f7,stroke:#54708e,color:#14243a
+  classDef ok fill:#e8f1f1,stroke:#3c787e,color:#1f4a4e,font-weight:bold
+  classDef error fill:#fdeced,stroke:#f15156,color:#8f2226
+  classDef externo fill:#fff7e6,stroke:#d9a441,color:#5a4310
+  classDef inicio fill:#426889,stroke:#426889,color:#ffffff,font-weight:bold
