@@ -1,19 +1,17 @@
 import { useState } from 'react'
-import { Footprints, MapPin } from 'lucide-react'
 import { TripChat } from '../components/chat/TripChat'
 import { BottomNav } from '../components/layout/BottomNav'
 import { DetailHeader } from '../components/layout/DetailHeader'
 import { PhoneFrame } from '../components/layout/PhoneFrame'
-import { MapLegend, RouteMap } from '../components/map/RouteMap'
-import { Route } from '../components/trip/Route'
-import { SeatCount } from '../components/trip/SeatCount'
-import { Empty, ErrorBanner, Loading } from '../components/ui/Feedback'
+import { TripMap } from '../components/map/TripMap'
+import { TripInfo } from '../components/trip/TripInfo'
+import { ErrorBanner, Loading } from '../components/ui/Feedback'
 import { PrimaryButton } from '../components/ui/PrimaryButton'
 import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { useChat } from '../hooks/useChat'
 import { api } from '../lib/api'
-import { ESTADO_RESERVA, esEstadoActivo, formatCosto, formatDiaHora, formatMetros, formatRangoHora } from '../lib/format'
+import { ESTADO_RESERVA, ESTADO_VIAJE, esEstadoActivo, formatDiaHora, formatMetros } from '../lib/format'
 
 const EXPLICACION = {
   solicitada: 'Tu solicitud está pendiente. Te avisaremos cuando el conductor la acepte o la rechace.',
@@ -40,6 +38,9 @@ export function TripDetailPage({ navigate, params }) {
   const viaje = data?.viaje
   const reserva = viaje?.mi_reserva
   const cancelable = reserva && ['solicitada', 'confirmada'].includes(reserva.estado) && !data.yaSalio
+  const estado = reserva
+    ? { texto: ESTADO_RESERVA[reserva.estado], activo: esEstadoActivo(reserva.estado) }
+    : viaje && { texto: ESTADO_VIAJE[viaje.estado], activo: esEstadoActivo(viaje.estado) }
 
   const cancelar = async () => {
     setEnviando(true)
@@ -56,12 +57,11 @@ export function TripDetailPage({ navigate, params }) {
   }
 
   return (
-    <PhoneFrame className="app-screen detail-screen">
+    <PhoneFrame className="app-screen">
       <DetailHeader
-        title="Tu reserva"
-        subtitle={viaje ? formatDiaHora(viaje.salida_en) : 'Detalle del viaje'}
-        status={reserva && ESTADO_RESERVA[reserva.estado]}
-        statusActivo={reserva && esEstadoActivo(reserva.estado)}
+        subtitle={viaje ? (viaje.estado === 'en_curso' ? 'Viaje actual' : formatDiaHora(viaje.salida_en)) : 'Cargando…'}
+        status={estado?.texto}
+        statusActivo={estado?.activo}
         onBack={() => navigate(PAGES.HISTORY)}
       />
       {cargando && <Loading />}
@@ -69,10 +69,13 @@ export function TripDetailPage({ navigate, params }) {
 
       {viaje && (
         <>
-          <RouteMap
-            className="mt-6"
-            alto={230}
+          <TripMap
             polilinea={viaje.ruta.polilinea}
+            etiqueta={
+              reserva?.distancia_pie_m != null
+                ? `Recogida a ${formatMetros(reserva.distancia_pie_m)}`
+                : `${viaje.ruta.distancia_km} km · ${viaje.ruta.duracion_min} min`
+            }
             marcadores={[
               { ...viaje.origen, tipo: 'origen' },
               { ...viaje.destino, tipo: 'destino' },
@@ -80,65 +83,43 @@ export function TripDetailPage({ navigate, params }) {
               ...(reserva?.punto_abordaje ? [{ ...reserva.punto_abordaje, tipo: 'abordaje', etiqueta: 'Abordaje' }] : []),
             ]}
           />
-          <MapLegend tipos={['origen', 'destino', 'recogida', 'abordaje']} />
 
-          <section className="trip-info">
-            <div>
-              <b>{viaje.conductor.nombre_visible}</b>
-              <span>{formatRangoHora(viaje.salida_en, viaje.ruta.duracion_min)}</span>
-            </div>
-            <small className="text-muted">{viaje.vehiculo.placa_o_descripcion}</small>
-            <Route origen={viaje.origen} destino={viaje.destino} />
-            <footer>
-              <SeatCount taken={viaje.asientos_ofrecidos - viaje.asientos_disponibles} total={viaje.asientos_ofrecidos} />
-              <small>{formatCosto(viaje.costo_referencia)}</small>
-            </footer>
-          </section>
+          <TripInfo viaje={viaje} />
 
-          {reserva ? (
-            <section className="trip-info">
-              <b>Punto de recogida acordado</b>
-              <p className="flex items-start gap-2 text-sm">
-                <MapPin size={16} className="mt-0.5 shrink-0" /> {reserva.recogida.texto || 'Punto elegido en el mapa'}
-              </p>
-              {reserva.punto_abordaje && (
-                <p className="flex items-start gap-2 text-sm text-muted">
-                  <Footprints size={16} className="mt-0.5 shrink-0" />
-                  Camina {formatMetros(reserva.distancia_pie_m ?? 0)} hasta la ruta (punto verde del mapa). El conductor no
-                  hace desvíos.
-                </p>
-              )}
-              <p className="rounded-xl bg-surface p-3 text-sm">{EXPLICACION[reserva.estado]}</p>
-            </section>
-          ) : (
-            <div className="mt-4">
-              <Empty>No tienes una reserva en este viaje.</Empty>
-            </div>
-          )}
+          <div className="note">
+            {reserva ? EXPLICACION[reserva.estado] : 'No tienes una reserva en este viaje.'}
+            {reserva && (
+              <small>
+                Te recogen en: {reserva.recogida.texto || 'el punto que elegiste'}
+                {reserva.punto_abordaje && ' · camina hasta el punto verde del mapa, el conductor no hace desvíos'}
+              </small>
+            )}
+          </div>
 
           <TripChat chat={chat} />
 
           <ErrorBanner error={accionError} className="mt-4" />
-          {cancelable &&
-            (confirmarCancelar ? (
-              <div className="mt-6 grid gap-2">
-                <p className="text-center text-sm">
-                  {reserva.estado === 'confirmada'
-                    ? 'Tu asiento quedará libre para otra persona.'
-                    : 'Se retirará tu solicitud.'}
-                </p>
-                <PrimaryButton variante="peligro" onClick={cancelar} disabled={enviando}>
-                  {enviando ? 'Cancelando…' : 'Sí, cancelar mi reserva'}
+          {cancelable && (
+            <div className="detail-actions">
+              {confirmarCancelar ? (
+                <>
+                  <p className="text-center text-sm">
+                    {reserva.estado === 'confirmada' ? 'Tu asiento quedará libre para otra persona.' : 'Se retirará tu solicitud.'}
+                  </p>
+                  <PrimaryButton variante="peligro" onClick={cancelar} disabled={enviando}>
+                    {enviando ? 'Cancelando…' : 'Sí, cancelar mi reserva'}
+                  </PrimaryButton>
+                  <PrimaryButton variante="secundario" onClick={() => setConfirmarCancelar(false)}>
+                    No, mantenerla
+                  </PrimaryButton>
+                </>
+              ) : (
+                <PrimaryButton variante="secundario" onClick={() => setConfirmarCancelar(true)}>
+                  Cancelar reserva
                 </PrimaryButton>
-                <PrimaryButton variante="secundario" onClick={() => setConfirmarCancelar(false)}>
-                  No, mantenerla
-                </PrimaryButton>
-              </div>
-            ) : (
-              <PrimaryButton variante="peligro" className="mt-6" onClick={() => setConfirmarCancelar(true)}>
-                Cancelar reserva
-              </PrimaryButton>
-            ))}
+              )}
+            </div>
+          )}
         </>
       )}
 

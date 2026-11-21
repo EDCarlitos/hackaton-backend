@@ -34,15 +34,17 @@ frontend solo dibuja la polilínea guardada.
 
 ## Pantallas ↔ requisitos
 
+El diseño sale de Figma (archivo `rutacaribe`): Login, Inicio, Detalle del viaje (pasajero y conductor) y Mis viajes. La navegación inferior es Inicio · Publicar · Mis viajes; Impacto se abre desde el perfil. Las pantallas que no están en Figma (Publicar, Impacto y los modales) usan las mismas piezas.
+
 | Pantalla | Archivo | Requisitos |
 |---|---|---|
 | Acceso / registro | `pages/LoginPage.jsx` | RF-01, RF-02 (nombre visible y términos) |
-| Inicio (buscar) | `pages/HomePage.jsx` + `modals/RideModal.jsx` | RF-12, RF-13, RF-14, RF-15 (solicitar), RF-19, RF-22 (el error se muestra) |
+| Inicio (buscar) | `pages/HomePage.jsx` + `modals/SearchModal.jsx` + `modals/RideModal.jsx` | RF-12, RF-13, RF-14, RF-15 (solicitar), RF-19, RF-22 (el error se muestra) |
 | Publicar / Salgo hoy | `pages/PublishPage.jsx` | RF-03 (alta de vehículo), RF-05, RF-06, RF-07, RF-09 (resumen antes de publicar) |
 | Mis viajes | `pages/HistoryPage.jsx` + `modals/RepublishModal.jsx` | RF-08, RF-10 |
 | Detalle (conductor) | `pages/DriverDetailPage.jsx` | RF-11, RF-16, RF-17, RF-18, RF-21, RF-23 (chat) |
 | Detalle (pasajero) | `pages/TripDetailPage.jsx` | RF-15 (cancelar), RF-18, RF-23 (chat) |
-| Impacto | `pages/ImpactPage.jsx` | RF-23, RF-24 (fórmula, factor, fuente y supuestos; "Estimación") |
+| Impacto (desde el perfil) | `pages/ImpactPage.jsx` | RF-23, RF-24 (fórmula, factor, fuente y supuestos; "Estimación") |
 | Perfil | `modals/ProfileModal.jsx` | RF-03, RNF-04 (aviso de privacidad) |
 | Notificaciones | `modals/NotificationsModal.jsx` | Avisos de RF-11, RF-16, RF-21 |
 
@@ -52,6 +54,7 @@ frontend solo dibuja la polilínea guardada.
 - `context/AuthContext.jsx`: sesión (`useAuth`).
 - `hooks/useAsync.js`: datos del API con recarga y polling. `hooks/useChat.js`: chat con polling cada 4 s.
 - `components/map/RouteMap.jsx`: Google Maps si hay llave; si no, esquema SVG. `components/forms/PointPicker.jsx`: elegir un punto (lista, mi ubicación o tocar el mapa).
+- `assets/figma/`: SVG exportados de Figma (marcador de ruta, asientos, reloj). El resto de los íconos son de `lucide-react`, igual que en el diseño.
 - `lib/format.js`: fechas, distancias y etiquetas de estado. `lib/geo.js`: polilíneas y lugares de Cancún.
 
 Antes de subir cambios: `npx eslint .` y `npx vite build`.

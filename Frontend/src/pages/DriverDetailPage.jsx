@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { AnimatePresence } from 'motion/react'
-import { Check, Copy, Footprints, MapPin, User, X } from 'lucide-react'
+import { Check, Copy, User, X } from 'lucide-react'
 import { TripChat } from '../components/chat/TripChat'
 import { BottomNav } from '../components/layout/BottomNav'
 import { DetailHeader } from '../components/layout/DetailHeader'
 import { PhoneFrame } from '../components/layout/PhoneFrame'
-import { MapLegend, RouteMap } from '../components/map/RouteMap'
+import { TripMap } from '../components/map/TripMap'
 import { RepublishModal } from '../components/modals/RepublishModal'
-import { Route } from '../components/trip/Route'
-import { SeatCount } from '../components/trip/SeatCount'
 import { ErrorBanner, inputClass, Loading } from '../components/ui/Feedback'
 import { Modal, ModalHeader } from '../components/ui/Modal'
 import { PrimaryButton } from '../components/ui/PrimaryButton'
@@ -16,7 +14,16 @@ import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { useChat } from '../hooks/useChat'
 import { api } from '../lib/api'
-import { ESTADO_RESERVA, ESTADO_VIAJE, esEstadoActivo, formatCosto, formatDiaHora, formatMetros, formatRangoHora } from '../lib/format'
+import {
+  ESTADO_RESERVA,
+  ESTADO_VIAJE,
+  esEstadoActivo,
+  formatCosto,
+  formatDia,
+  formatMetros,
+  formatRangoHora,
+  formatRuta,
+} from '../lib/format'
 import { TripDetailPage } from './TripDetailPage'
 
 /** Detalle del viaje, vista de conductor ({ viajeId }). */
@@ -61,10 +68,9 @@ export function DriverDetailPage({ navigate, params }) {
   const cancelable = viaje && ['abierto', 'lleno'].includes(viaje.estado)
 
   return (
-    <PhoneFrame className="app-screen detail-screen">
+    <PhoneFrame className="app-screen">
       <DetailHeader
-        title="Tu viaje"
-        subtitle={viaje ? `${formatDiaHora(viaje.salida_en)} · Vista de conductor` : 'Vista de conductor'}
+        subtitle="Vista de conductor"
         status={viaje && ESTADO_VIAJE[viaje.estado]}
         statusActivo={viaje && esEstadoActivo(viaje.estado)}
         onBack={() => navigate(PAGES.HISTORY)}
@@ -74,10 +80,9 @@ export function DriverDetailPage({ navigate, params }) {
 
       {viaje && (
         <>
-          <RouteMap
-            className="mt-6"
-            alto={230}
+          <TripMap
             polilinea={viaje.ruta.polilinea}
+            etiqueta={`${viaje.ruta.distancia_km} km · ${viaje.ruta.duracion_min} min`}
             marcadores={[
               { ...viaje.origen, tipo: 'origen' },
               { ...viaje.destino, tipo: 'destino' },
@@ -87,106 +92,94 @@ export function DriverDetailPage({ navigate, params }) {
                 .map((r) => ({ ...r.punto_abordaje, tipo: 'abordaje', etiqueta: r.pasajero.nombre_visible.split(' ')[0] })),
             ]}
           />
-          <MapLegend tipos={['origen', 'destino', 'recogida', 'abordaje']} />
-
-          <section className="trip-info">
-            <div>
-              <b>{viaje.vehiculo.placa_o_descripcion}</b>
-              <span>{formatRangoHora(viaje.salida_en, viaje.ruta.duracion_min)}</span>
-            </div>
-            <Route origen={viaje.origen} destino={viaje.destino} />
-            <footer>
-              <SeatCount taken={viaje.asientos_ofrecidos - viaje.asientos_disponibles} total={viaje.asientos_ofrecidos} />
-              <small>
-                {viaje.ruta.distancia_km} km · {formatCosto(viaje.costo_referencia)}
-              </small>
-            </footer>
-            {viaje.estado === 'cancelado' && (
-              <p className="text-xs text-muted">Cancelado{viaje.motivo_cancelacion ? `: ${viaje.motivo_cancelacion}` : ''}</p>
-            )}
-          </section>
 
           <ErrorBanner error={accionError} className="mt-4" />
-          {aviso && <p className="mt-4 rounded-xl bg-surface p-3 text-sm">{aviso}</p>}
+          {aviso && <p className="note">{aviso}</p>}
 
-          <section className="passengers">
-            <header>
-              <b>Solicitudes</b>
-              <small>{pendientes.length} pendiente(s)</small>
-            </header>
-            {!pendientes.length && <p className="py-3 text-sm text-muted">No hay solicitudes pendientes.</p>}
-            {pendientes.map((r) => (
-              <div className="passenger" key={r.id}>
-                <span>
-                  <User size={20} />
-                </span>
-                <p>
-                  <b>{r.pasajero.nombre_visible}</b>
-                  <small>
-                    <MapPin size={11} className="inline" /> {r.recogida.texto || 'Punto en el mapa'} ·{' '}
-                    <Footprints size={11} className="inline" /> {formatMetros(r.distancia_pie_m ?? 0)}
-                  </small>
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    aria-label="Rechazar"
-                    disabled={ocupado === r.id}
-                    className="grid size-9 place-items-center rounded-full border border-line"
-                    onClick={() => responder(r, 'rechazar')}
-                  >
-                    <X size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Aceptar"
-                    disabled={ocupado === r.id || viaje.asientos_disponibles < 1}
-                    className="grid size-9 place-items-center rounded-full bg-coral disabled:opacity-40"
-                    onClick={() => responder(r, 'aceptar')}
-                  >
-                    <Check size={16} />
-                  </button>
+          {pendientes.length > 0 && (
+            <section className="passengers">
+              <header>
+                <b>Solicitudes</b>
+                <small>
+                  {pendientes.length} por responder
+                </small>
+              </header>
+              {pendientes.map((r) => (
+                <div className="passenger" key={r.id}>
+                  <span className="avatar">
+                    <User size={20} />
+                  </span>
+                  <p>
+                    <b>{r.pasajero.nombre_visible}</b>
+                    <small>
+                      {r.recogida.texto || 'Punto en el mapa'} · a {formatMetros(r.distancia_pie_m ?? 0)} de tu ruta
+                    </small>
+                  </p>
+                  <div className="passenger-actions">
+                    <button
+                      type="button"
+                      aria-label={`Rechazar a ${r.pasajero.nombre_visible}`}
+                      disabled={ocupado === r.id}
+                      onClick={() => responder(r, 'rechazar')}
+                    >
+                      <X size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="accept"
+                      aria-label={`Aceptar a ${r.pasajero.nombre_visible}`}
+                      disabled={ocupado === r.id || viaje.asientos_disponibles < 1}
+                      onClick={() => responder(r, 'aceptar')}
+                    >
+                      <Check size={16} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </section>
+              ))}
+            </section>
+          )}
 
           <section className="passengers">
             <header>
               <b>Pasajeros</b>
               <small>
-                {confirmados.length} de {viaje.asientos_ofrecidos} asientos
+                {viaje.asientos_ofrecidos - viaje.asientos_disponibles} de {viaje.asientos_ofrecidos} plazas
               </small>
             </header>
-            {!confirmados.length && <p className="py-3 text-sm text-muted">Aún no hay pasajeros confirmados.</p>}
+            {!confirmados.length && <p className="empty-row">Aún no hay pasajeros confirmados.</p>}
             {confirmados.map((r, index) => (
               <div className="passenger" key={r.id}>
-                <span>
+                <span className="avatar">
                   <User size={20} />
                 </span>
                 <p>
                   <b>{r.pasajero.nombre_visible}</b>
-                  <small>
-                    Recoger en: {r.recogida.texto || 'punto en el mapa'}
-                    {r.punto_abordaje && ` (sobre tu ruta: ${r.punto_abordaje.lat.toFixed(4)}, ${r.punto_abordaje.lng.toFixed(4)})`}
-                  </small>
+                  <small>1 plaza · {r.recogida.texto || 'punto en el mapa'}</small>
                 </p>
                 <em title={ESTADO_RESERVA[r.estado]}>{r.estado === 'completada' ? '✓' : String(index + 1).padStart(2, '0')}</em>
               </div>
             ))}
-            {otras.length > 0 && (
-              <footer>
+            <footer>
+              <b>{formatRuta(viaje.origen, viaje.destino)}</b>
+              <small>
+                {formatRangoHora(viaje.salida_en, viaje.ruta.duracion_min)} · {formatDia(viaje.salida_en)} ·{' '}
+                {formatCosto(viaje.costo_referencia)}
+              </small>
+              {otras.length > 0 && (
                 <small>
-                  {otras.length} solicitud(es) cerrada(s):{' '}
+                  Cerradas:{' '}
                   {otras.map((r) => `${r.pasajero.nombre_visible.split(' ')[0]} (${ESTADO_RESERVA[r.estado].toLowerCase()})`).join(', ')}
                 </small>
-              </footer>
-            )}
+              )}
+              {viaje.estado === 'cancelado' && (
+                <small>Cancelado{viaje.motivo_cancelacion ? `: ${viaje.motivo_cancelacion}` : ''}</small>
+              )}
+            </footer>
           </section>
 
           <TripChat chat={chat} />
 
-          <div className="mt-6 grid gap-2">
+          <div className="detail-actions">
             <PrimaryButton variante="secundario" onClick={() => setModal('republicar')}>
               <Copy size={16} className="mr-2 inline" /> Publicar de nuevo
             </PrimaryButton>
