@@ -18,7 +18,8 @@
     padding: 0;
     background: #fff;
   }
-  .prototype > * {
+  .prototype > .phone,
+  .screen-transition {
     width: 100%;
   }
 
@@ -40,8 +41,7 @@
   .app-screen {
     padding: 56px 72px 96px;
   }
-  /* :not(.fixed): los modales (fondo a pantalla completa) también son hijos directos. */
-  .app-screen > :not(.fixed) {
+  .app-screen > * {
     width: 100%;
     max-width: 1000px;
     margin-left: auto;
@@ -167,7 +167,7 @@
     align-content: start;
     padding-inline: max(72px, calc((100% - 1160px) / 2));
   }
-  .app-screen.detail-layout > :not(.fixed) {
+  .app-screen.detail-layout > * {
     grid-column: 1;
     max-width: none;
     margin-left: 0;
@@ -194,7 +194,7 @@
   }
 
   /* --- Formularios angostos (publicar, impacto) --- */
-  .app-screen.narrow-layout > :not(.fixed) {
+  .app-screen.narrow-layout > * {
     max-width: 620px;
   }
 
@@ -209,6 +209,6 @@
 
   /* --- Modales: un poco más anchos, siempre centrados --- */
   .modal-sheet {
-    max-width: 460px !important;
+    max-width: 460px;
   }
 }

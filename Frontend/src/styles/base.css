@@ -62,15 +62,19 @@
 .prototype {
   min-height: 100svh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   background: var(--color-backdrop);
   padding: 24px;
   color: var(--color-ink);
   font-family: var(--font-body);
+  overflow-wrap: anywhere;
 }
-/* El hijo directo es el contenedor animado de ScreenTransition: sin ancho fijo se encoge al contenido. */
-.prototype > * {
+/* En móvil el shell usa display: contents y la pantalla animada es el ítem del grid. */
+.prototype > .phone,
+.screen-transition {
   width: min(430px, 100%);
+  min-width: 0;
 }
 .phone {
   /* overflow: clip (no hidden) para que la navegación inferior pueda ser sticky. */

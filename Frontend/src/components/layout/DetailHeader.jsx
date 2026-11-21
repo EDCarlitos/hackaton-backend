@@ -12,7 +12,7 @@ export function DetailHeader({ title = 'Detalle del viaje', subtitle, status, st
         <h1>{title}</h1>
         <p>{subtitle}</p>
       </div>
-      {status ? <StatusChip tono={statusTono}>{status}</StatusChip> : <span />}
+      {status && <StatusChip tono={statusTono}>{status}</StatusChip>}
     </header>
   )
 }

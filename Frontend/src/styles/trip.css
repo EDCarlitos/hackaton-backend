@@ -19,6 +19,7 @@
 .current-trip__top,
 .current-trip__bottom {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -41,6 +42,7 @@
   font-weight: 600;
 }
 .current-trip__bottom > span:first-child {
+  min-width: 0;
   display: grid;
   gap: 1px;
 }
@@ -113,9 +115,6 @@
   padding: 0;
   border: 0;
   background: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: 12px;
   line-height: 17px;
   color: var(--color-teal);
@@ -166,21 +165,22 @@
 }
 .trip-title b {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: 15px;
   line-height: 20px;
   font-weight: 600;
 }
 .trip-time {
-  flex: none;
+  flex: 0 0 auto;
+  max-width: 55%;
   display: flex;
   align-items: center;
   gap: 5px;
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
+}
+.trip-time img {
+  flex: none;
 }
 .trip-footer {
   flex-wrap: wrap;
@@ -210,9 +210,6 @@
   gap: 8px;
 }
 .route strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: 12px;
   line-height: 18px;
   font-weight: 500;
@@ -237,8 +234,9 @@
   position: absolute;
   left: 16px;
   bottom: 16px;
-  height: 36px;
-  padding: 0 16px;
+  max-width: calc(100% - 32px);
+  min-height: 36px;
+  padding: 6px 16px;
   border-radius: 18px;
   display: flex;
   align-items: center;
@@ -273,12 +271,6 @@
   font-size: 15px;
   line-height: 21px;
   font-weight: 600;
-}
-.trip-info__driver small,
-.trip-info__driver b {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .trip-info__driver small {
   font-size: 12px;
@@ -407,9 +399,6 @@
   font-weight: 600;
 }
 .passenger p small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: 12px;
   line-height: 17px;
   color: var(--color-muted);
@@ -423,6 +412,7 @@
   color: var(--color-muted);
 }
 .passenger-actions {
+  flex: none;
   display: flex;
   gap: 8px;
 }

@@ -1,29 +1,34 @@
 import { motion } from 'motion/react'
 import { X } from 'lucide-react'
+import { createPortal } from 'react-dom'
 
 const sheetTransition = { type: 'spring', stiffness: 400, damping: 32 }
 
-/** Hoja modal: se cierra al hacer clic en el fondo, no dentro del contenido. */
+/** Usa el viewport incluso mientras la pantalla que abrió el modal se está animando. */
 export function Modal({ children, onClose }) {
-  return (
+  return createPortal(
     <motion.div
-      className="fixed inset-0 z-50 grid place-items-end bg-ink/35 p-3 sm:place-items-center"
+      className="modal-overlay"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onMouseDown={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
     >
       <motion.section
-        className="modal-sheet max-h-[92svh] w-full max-w-[382px] min-w-0 overflow-y-auto overscroll-contain rounded-[22px] bg-white p-5 pb-[calc(20px+env(safe-area-inset-bottom,0px))] shadow-2xl"
+        className="modal-sheet min-w-0 rounded-[22px] bg-white p-5 shadow-2xl"
+        role="dialog"
+        aria-modal="true"
         initial={{ y: 30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 30, opacity: 0 }}
         transition={sheetTransition}
-        onMouseDown={(event) => event.stopPropagation()}
       >
         {children}
       </motion.section>
-    </motion.div>
+    </motion.div>,
+    document.body,
   )
 }
 

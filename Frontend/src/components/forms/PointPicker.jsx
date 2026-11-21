@@ -203,7 +203,7 @@ export function PointPicker({
       {value && !escribiendo && (
         <p className="flex min-w-0 items-center gap-1 text-xs text-muted">
           <MapPin size={13} className="shrink-0" />
-          <span className="truncate">{value.texto}</span>
+          <span className="min-w-0">{value.texto}</span>
         </p>
       )}
       {error && <p className="text-xs text-coral">{error}</p>}
@@ -238,8 +238,8 @@ function Opcion({ principal, secundario, onElegir }) {
       >
         <MapPin size={15} className="mt-0.5 shrink-0 text-muted" />
         <span className="min-w-0">
-          <span className="block truncate">{principal}</span>
-          {secundario && <span className="block truncate text-xs text-muted">{secundario}</span>}
+          <span className="block">{principal}</span>
+          {secundario && <span className="block text-xs text-muted">{secundario}</span>}
         </span>
       </button>
     </li>

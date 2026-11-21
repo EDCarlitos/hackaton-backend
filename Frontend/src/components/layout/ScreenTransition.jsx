@@ -8,6 +8,7 @@ export function ScreenTransition({ screenKey, children }) {
   return (
     <AnimatePresence mode="wait">
       <motion.div
+        className="screen-transition"
         key={screenKey}
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}

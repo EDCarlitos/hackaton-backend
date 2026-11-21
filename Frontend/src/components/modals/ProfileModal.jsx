@@ -26,10 +26,10 @@ export function ProfileModal({ onVerImpacto, onClose }) {
   return (
     <Modal onClose={onClose}>
       <div className="mb-5 flex items-center gap-3">
-        <span className="grid size-12 place-items-center rounded-full bg-surface">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-surface">
           <User size={22} />
         </span>
-        <div>
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold">{usuario.nombre_visible}</h2>
           <p className="text-sm text-muted">{usuario.correo}</p>
         </div>
@@ -57,11 +57,11 @@ export function ProfileModal({ onVerImpacto, onClose }) {
         {vehiculos.data?.vehiculos
           .filter((v) => v.activo)
           .map((v) => (
-            <div key={v.id} className="flex items-center justify-between rounded-xl bg-surface px-3 py-2 text-sm">
-              <span>
+            <div key={v.id} className="flex items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2 text-sm">
+              <span className="min-w-0">
                 {v.placa_o_descripcion} <small className="text-muted">· {v.asientos} asientos</small>
               </span>
-              <button type="button" aria-label="Desactivar vehículo" onClick={() => desactivar(v.id)}>
+              <button type="button" className="shrink-0" aria-label="Desactivar vehículo" onClick={() => desactivar(v.id)}>
                 <Trash2 size={16} />
               </button>
             </div>
