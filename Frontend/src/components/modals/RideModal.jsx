@@ -10,9 +10,10 @@ import { PrimaryButton } from '../ui/PrimaryButton'
 
 /**
  * Resultado de búsqueda (RF-14) y botón para pedir 1 asiento (RF-15).
- * resultado: un elemento de GET /viajes/buscar. recogida/bajada: lo que eligió el pasajero.
+ * resultado: un elemento de /viajes/buscar o /viajes/proximos. recogida/bajada: lo que eligió el pasajero
+ * (puede no haber recogida: entonces se pide elegirla antes de solicitar). conHora: se buscó a una hora concreta.
  */
-export function RideModal({ resultado, recogida, bajada, onReservado, onVerReserva, onClose }) {
+export function RideModal({ resultado, recogida, bajada, conHora, onReservado, onVerReserva, onElegirRecogida, onClose }) {
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState(null)
   const [miReserva, setMiReserva] = useState(resultado.mi_reserva)
@@ -31,33 +32,38 @@ export function RideModal({ resultado, recogida, bajada, onReservado, onVerReser
     }
   }
 
+  // Solo los puntos que existen (sin recogida no hay punto de abordaje).
   const marcadores = [
     { ...resultado.origen, tipo: 'origen' },
     { ...resultado.destino, tipo: 'destino' },
-    { ...recogida, tipo: 'recogida' },
-    { ...resultado.punto_abordaje, tipo: 'abordaje' },
-  ]
+    recogida && { ...recogida, tipo: 'recogida' },
+    resultado.punto_abordaje && { ...resultado.punto_abordaje, tipo: 'abordaje' },
+  ].filter(Boolean)
 
   return (
     <Modal onClose={onClose}>
       <ModalHeader
-        eyebrow={`Pasa cerca de ti · ${resultado.conductor.nombre_visible}`}
+        eyebrow={`${recogida ? 'Pasa cerca de ti' : 'Viaje disponible'} · ${resultado.conductor.nombre_visible}`}
         title={`${formatDia(resultado.salida_en)} a las ${formatHora(resultado.salida_en)}`}
         onClose={onClose}
       />
       <div className="relative">
         <RouteMap polilinea={resultado.ruta.polilinea} marcadores={marcadores} alto={270} />
-        <span className="trip-map__pill">
-          <Footprints size={16} /> {formatMetros(resultado.distancia_pie_m)} a pie hasta la ruta
-        </span>
+        {resultado.distancia_pie_m != null && (
+          <span className="trip-map__pill">
+            <Footprints size={16} /> {formatMetros(resultado.distancia_pie_m)} a pie hasta la ruta
+          </span>
+        )}
       </div>
-      <MapLegend tipos={['origen', 'destino', 'recogida', 'abordaje']} />
+      <MapLegend tipos={recogida ? ['origen', 'destino', 'recogida', 'abordaje'] : ['origen', 'destino']} />
       <div className="[&_.trip-info]:mt-3">
         <TripInfo viaje={resultado} />
       </div>
-      <p className="mt-2 text-xs text-muted">
-        Sale {Math.abs(resultado.diferencia_min)} min {resultado.diferencia_min < 0 ? 'antes' : 'después'} de tu hora.
-      </p>
+      {conHora && (
+        <p className="mt-2 text-xs text-muted">
+          Sale {Math.abs(resultado.diferencia_min)} min {resultado.diferencia_min < 0 ? 'antes' : 'después'} de tu hora.
+        </p>
+      )}
 
       <ErrorBanner error={error} className="mt-4" />
       {miReserva ? (
@@ -77,9 +83,14 @@ export function RideModal({ resultado, recogida, bajada, onReservado, onVerReser
             Ver mi reserva
           </PrimaryButton>
         </div>
-      ) : (
+      ) : recogida ? (
         <PrimaryButton className="mt-5" onClick={solicitar} disabled={enviando}>
           {enviando ? 'Enviando…' : 'Pedir un lugar'}
+        </PrimaryButton>
+      ) : (
+        // Para reservar, el backend necesita tu punto de recogida (debe quedar a ≤400 m de la ruta).
+        <PrimaryButton className="mt-5" onClick={onElegirRecogida}>
+          Elegir dónde te recogen
         </PrimaryButton>
       )}
       <p className="mt-3 text-center text-[11px] text-muted">

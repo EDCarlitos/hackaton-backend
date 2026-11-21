@@ -21,9 +21,9 @@ import { ESTADO_RESERVA, formatCostoCorto, formatDia, formatMetros, formatRangoH
 
 const MODALS = { FILTROS: 'filtros', NOTIFICATIONS: 'notifications', PROFILE: 'profile' }
 const CLAVE_BUSQUEDA = 'rutacaribe.busqueda'
-const HORA_INICIAL = { id: 'ahora', otra: '' }
+const HORA_INICIAL = { id: 'cualquiera', otra: '' }
 
-// Recogida, bajada y orden de la última búsqueda (solo en este navegador). La hora arranca en "Ahora".
+// Recogida, bajada y orden de la última búsqueda (solo en este navegador). La hora arranca en "Cualquier hora".
 function leerFiltrosGuardados() {
   const base = { recogida: null, bajada: null, hora: HORA_INICIAL, orden: ORDENES[0] }
   try {
@@ -80,18 +80,28 @@ async function cargarProximo() {
   return proximo ? { ...proximo, yaSalio: new Date(proximo.salida_en).getTime() <= Date.now() } : null
 }
 
+const VENTANA_MS = 15 * 60_000 // la misma de la sección 5 (REGLAS.VENTANA_HORA_MIN en el backend)
+
+// "Cualquier hora": todos los próximos con lugar (/viajes/proximos), con o sin punto de recogida.
+// Con una hora concreta: la búsqueda de ±15 min (/viajes/buscar); sin recogida se filtran los próximos.
 async function buscarViajes({ recogida, bajada, hora }) {
-  if (!recogida) return null
-  // Si la hora elegida ya pasó (pantalla abierta mucho rato), se busca desde ahora.
-  const elegida = resolverHora(HORAS_BUSQUEDA, hora) || new Date()
-  const salida = new Date(Math.max(elegida.getTime(), Date.now()))
-  return api.get('/viajes/buscar', {
+  const punto = recogida && {
     recogida_lat: recogida.lat,
     recogida_lng: recogida.lng,
     bajada_lat: bajada?.lat,
     bajada_lng: bajada?.lng,
-    salida_en: salida.toISOString(),
-  })
+  }
+  const elegida = resolverHora(HORAS_BUSQUEDA, hora)
+  if (!elegida) return api.get('/viajes/proximos', { ...punto, limite: 50 })
+
+  // Si la hora elegida ya pasó (pantalla abierta mucho rato), se busca desde ahora.
+  const salida = new Date(Math.max(elegida.getTime(), Date.now()))
+  if (punto) return api.get('/viajes/buscar', { ...punto, salida_en: salida.toISOString() })
+  const todos = await api.get('/viajes/proximos', { limite: 100 })
+  return {
+    ...todos,
+    resultados: todos.resultados.filter((r) => Math.abs(new Date(r.salida_en) - salida) <= VENTANA_MS),
+  }
 }
 
 /** Inicio (como en Figma): tu viaje actual y "Conductores disponibles"; el botón de orden abre los filtros. */
@@ -108,10 +118,12 @@ export function HomePage({ navigate }) {
   const busqueda = useAsync(() => buscarViajes(consulta), JSON.stringify(consulta))
 
   const resultados = useMemo(() => {
-    const lista = busqueda.data?.resultados || []
-    if (orden === ORDENES[1]) return [...lista].sort((a, b) => Math.abs(a.diferencia_min) - Math.abs(b.diferencia_min))
-    return lista // el API ya los manda por distancia a pie y luego por hora (RF-13)
-  }, [busqueda.data, orden])
+    const lista = [...(busqueda.data?.resultados || [])]
+    const porHora = (a, b) => new Date(a.salida_en) - new Date(b.salida_en)
+    // "Más cercano" solo tiene sentido con punto de recogida (RF-13: distancia a pie y luego hora).
+    if (orden === ORDENES[1] && recogida) return lista.sort((a, b) => a.distancia_pie_m - b.distancia_pie_m || porHora(a, b))
+    return lista.sort(porHora)
+  }, [busqueda.data, orden, recogida])
 
   const abrirViaje = useCallback(
     (viajeId, papel) => {
@@ -129,10 +141,11 @@ export function HomePage({ navigate }) {
   const abrirFiltros = () => setModal(MODALS.FILTROS)
 
   const n = resultados.length
-  const cargandoPrimera = recogida && busqueda.cargando && !busqueda.data
-  const textoHora = hora.id === 'otra' ? 'a esa hora' : HORAS_BUSQUEDA.find((o) => o.id === hora.id)?.texto.toLowerCase()
-  // Qué se está filtrando, en una sola línea discreta.
-  const filtrosTexto = recogida && [recogida.texto, bajada && `a ${bajada.texto}`, textoHora].filter(Boolean).join(' · ')
+  const cargandoPrimera = busqueda.cargando && !busqueda.data
+  const textoHora =
+    hora.id === 'cualquiera' ? null : hora.id === 'otra' ? 'a esa hora' : HORAS_BUSQUEDA.find((o) => o.id === hora.id)?.texto.toLowerCase()
+  // Qué se está filtrando, en una sola línea discreta (nada si no hay filtros).
+  const filtrosTexto = [recogida?.texto, bajada && `a ${bajada.texto}`, textoHora].filter(Boolean).join(' · ')
 
   return (
     <PhoneFrame className="app-screen">
@@ -150,13 +163,9 @@ export function HomePage({ navigate }) {
         <header>
           <div>
             <h2>Conductores disponibles</h2>
-            {recogida ? (
-              <p>{cargandoPrimera ? 'Buscando…' : `${n} viaje${n === 1 ? '' : 's'} cerca de ti`}</p>
-            ) : (
-              <button type="button" className="filters-summary" onClick={abrirFiltros}>
-                Elige dónde te recogen
-              </button>
-            )}
+            <p>
+              {cargandoPrimera ? 'Buscando…' : `${n} viaje${n === 1 ? '' : 's'} ${recogida ? 'cerca de ti' : 'próximos'}`}
+            </p>
           </div>
           <button type="button" className="filter" onClick={abrirFiltros} aria-label={`Filtros. Orden: ${orden}`}>
             <SlidersHorizontal size={18} /> {orden}
@@ -188,7 +197,8 @@ export function HomePage({ navigate }) {
                 <>
                   <SeatCount taken={r.asientos_ofrecidos - r.asientos_disponibles} total={r.asientos_ofrecidos} />
                   <span>
-                    Recogida a {formatMetros(r.distancia_pie_m)} · <b className="font-semibold">{formatCostoCorto(r.costo_referencia)}</b>
+                    {r.distancia_pie_m != null && `Recogida a ${formatMetros(r.distancia_pie_m)} · `}
+                    <b className="font-semibold">{formatCostoCorto(r.costo_referencia)}</b>
                   </span>
                 </>
               }
@@ -211,7 +221,12 @@ export function HomePage({ navigate }) {
               proximo.reload()
               busqueda.reload()
             }}
+            conHora={hora.id !== 'cualquiera'}
             onVerReserva={(viajeId) => abrirViaje(viajeId, 'pasajero')}
+            onElegirRecogida={() => {
+              setSeleccionado(null)
+              abrirFiltros()
+            }}
             onClose={() => setSeleccionado(null)}
           />
         )}

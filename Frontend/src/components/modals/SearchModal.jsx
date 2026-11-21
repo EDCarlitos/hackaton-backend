@@ -21,15 +21,15 @@ export function SearchModal({ inicial, onAplicar, onClose }) {
         className="grid grid-cols-1 gap-5"
         onSubmit={(e) => {
           e.preventDefault()
-          if (filtros.recogida) onAplicar(filtros)
+          onAplicar(filtros)
         }}
       >
         <PointPicker
           label="Te recogen en"
           value={filtros.recogida}
           onChange={cambiar('recogida')}
-          placeholder="Calle, colonia o lugar"
-          autoFocus={!filtros.recogida}
+          opcional
+          placeholder="Para ver solo los que pasan cerca"
         />
         <PointPicker
           label="Te bajas en"
@@ -46,15 +46,21 @@ export function SearchModal({ inicial, onAplicar, onClose }) {
           <span className="text-sm font-medium">Ordenar por</span>
           <div className="chip-row" role="group" aria-label="Ordenar por">
             {ORDENES.map((o) => (
-              <button key={o} type="button" className="chip" aria-pressed={filtros.orden === o} onClick={() => cambiar('orden')(o)}>
+              <button
+                key={o}
+                type="button"
+                className="chip disabled:opacity-40"
+                aria-pressed={filtros.orden === o}
+                // "Más cercano" necesita un punto de recogida para medir la distancia.
+                disabled={o === ORDENES[1] && !filtros.recogida}
+                onClick={() => cambiar('orden')(o)}
+              >
                 {o}
               </button>
             ))}
           </div>
         </div>
-        <PrimaryButton type="submit" disabled={!filtros.recogida}>
-          {filtros.recogida ? 'Ver conductores' : 'Elige dónde te recogen'}
-        </PrimaryButton>
+        <PrimaryButton type="submit">Ver conductores</PrimaryButton>
       </form>
     </Modal>
   )

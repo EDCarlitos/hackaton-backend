@@ -19,6 +19,7 @@ function redondear5(fecha) {
 
 /** Opciones para buscar un viaje (pasajero). */
 export const HORAS_BUSQUEDA = [
+  { id: 'cualquiera', texto: 'Cualquier hora', calcular: () => null }, // todos los próximos (/viajes/proximos)
   { id: 'ahora', texto: 'Ahora', calcular: () => new Date() },
   { id: 'en1h', texto: 'En 1 h', calcular: () => redondear5(Date.now() + 60 * MIN) },
   { id: 'manana7', texto: 'Mañana 7:00', calcular: () => mananaA(7) },
@@ -37,5 +38,5 @@ export function resolverHora(opciones, valor) {
   return (opciones.find((o) => o.id === valor.id) || opciones[0]).calcular()
 }
 
-/** Orden de "Conductores disponibles": por distancia a pie (lo que manda el API) o por cercanía a tu hora. */
-export const ORDENES = ['Más cercano', 'Más puntual']
+/** Orden de "Conductores disponibles": el que sale antes, o el que pasa más cerca de tu recogida. */
+export const ORDENES = ['Más pronto', 'Más cercano']
