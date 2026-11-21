@@ -51,7 +51,7 @@ services:
       - ./Frontend/index.html:/app/index.html:ro
       - ./Frontend/vite.config.js:/app/vite.config.js:ro
     ports:
-      - "127.0.0.1:${APP_PORT:-8080}:5173"
+      - "127.0.0.1:${APP_PORT:-5173}:5173"
     depends_on:
       backend:
         condition: service_healthy
