@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { Check, Clock3, Footprints, User } from 'lucide-react'
+import { Check, Footprints } from 'lucide-react'
 import { api } from '../../lib/api'
-import { ESTADO_RESERVA, formatCosto, formatDia, formatMetros, formatRangoHora } from '../../lib/format'
-import { RouteMap, MapLegend } from '../map/RouteMap'
+import { ESTADO_RESERVA, formatDia, formatMetros } from '../../lib/format'
+import { MapLegend, RouteMap } from '../map/RouteMap'
+import { TripInfo } from '../trip/TripInfo'
 import { ErrorBanner } from '../ui/Feedback'
 import { Modal, ModalHeader } from '../ui/Modal'
 import { PrimaryButton } from '../ui/PrimaryButton'
-import { Route } from '../trip/Route'
-import { SeatCount } from '../trip/SeatCount'
 
 /**
  * Resultado de búsqueda (RF-14) y botón para pedir 1 asiento (RF-15).
@@ -41,48 +40,26 @@ export function RideModal({ resultado, recogida, bajada, onReservado, onVerReser
 
   return (
     <Modal onClose={onClose}>
-      <ModalHeader eyebrow="Viaje compatible" title={`${formatDia(resultado.salida_en)}, ${resultado.conductor.nombre_visible}`} onClose={onClose} />
-      <RouteMap polilinea={resultado.ruta.polilinea} marcadores={marcadores} alto={170} />
-      <MapLegend tipos={['origen', 'destino', 'recogida', 'abordaje']} />
-      <div className="mt-3 rounded-2xl bg-surface p-4">
-        <div className="flex items-center justify-between">
-          <span className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-full bg-white">
-              <User size={19} />
-            </span>
-            <span>
-              <b className="block text-sm">{resultado.conductor.nombre_visible}</b>
-              <small className="text-xs text-muted">{resultado.vehiculo.placa_o_descripcion}</small>
-            </span>
-          </span>
-          <span className="text-xs font-medium">
-            <Clock3 size={14} className="mr-1 inline" />
-            {formatRangoHora(resultado.salida_en, resultado.ruta.duracion_min)}
-          </span>
-        </div>
-        <div className="mt-4 border-t border-line pt-4">
-          <Route origen={resultado.origen} destino={resultado.destino} />
-        </div>
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <SeatCount
-            taken={resultado.asientos_ofrecidos - resultado.asientos_disponibles}
-            total={resultado.asientos_ofrecidos}
-          />
-          <span className="flex items-center gap-1">
-            <Footprints size={14} /> {formatMetros(resultado.distancia_pie_m)} a pie hasta la ruta
-          </span>
-        </div>
-        <p className="mt-2 text-xs text-muted">
-          {formatCosto(resultado.costo_referencia)} · sale {Math.abs(resultado.diferencia_min)} min{' '}
-          {resultado.diferencia_min < 0 ? 'antes' : 'después'} de tu hora
-        </p>
+      <ModalHeader eyebrow="Viaje compatible" title={formatDia(resultado.salida_en)} onClose={onClose} />
+      <div className="relative">
+        <RouteMap polilinea={resultado.ruta.polilinea} marcadores={marcadores} alto={190} />
+        <span className="trip-map__pill">
+          <Footprints size={16} /> {formatMetros(resultado.distancia_pie_m)} a pie hasta la ruta
+        </span>
       </div>
+      <MapLegend tipos={['origen', 'destino', 'recogida', 'abordaje']} />
+      <div className="[&_.trip-info]:mt-3">
+        <TripInfo viaje={resultado} />
+      </div>
+      <p className="mt-2 text-xs text-muted">
+        Sale {Math.abs(resultado.diferencia_min)} min {resultado.diferencia_min < 0 ? 'antes' : 'después'} de tu hora.
+      </p>
 
       <ErrorBanner error={error} className="mt-4" />
       {miReserva ? (
-        <div className="mt-4 grid gap-3">
-          <div className="flex items-center gap-3 rounded-xl bg-coral/10 p-3 text-sm">
-            <span className="grid size-7 place-items-center rounded-full bg-coral">
+        <div className="mt-4 grid grid-cols-1 gap-3">
+          <div className="flex items-center gap-3 rounded-xl bg-surface p-3 text-sm">
+            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-coral text-white">
               <Check size={16} />
             </span>
             <span>
