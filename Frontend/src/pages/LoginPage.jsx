@@ -32,7 +32,7 @@ export function LoginPage() {
   return (
     <PhoneFrame className="login-screen">
       <section className="login-content">
-        <span className="coral-mark" />
+        <img className="login-logo" src="/logo.png" alt="Yendo" width="131" height="28" />
         <h1>{registro ? 'Crea tu cuenta' : 'Bienvenido'}</h1>
         <LoginForm key={modo} modo={modo} onSubmit={enviar} />
         {import.meta.env.DEV && !registro && (

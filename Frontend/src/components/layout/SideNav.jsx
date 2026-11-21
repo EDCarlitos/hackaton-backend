@@ -18,7 +18,7 @@ export function SideNav({ page, navigate }) {
   const activa = SECCION[page]
   return (
     <nav className="side-nav" aria-label="Navegación principal">
-      <span className="side-nav__brand">RutaCaribe</span>
+      <img className="side-nav__brand" src="/logo.png" alt="Yendo" width="149" height="32" />
       <button
         type="button"
         className="side-nav__publish"
