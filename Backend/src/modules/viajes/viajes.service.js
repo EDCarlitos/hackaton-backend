@@ -285,6 +285,58 @@ async function buscar(tenant, pasajeroId, query) {
   };
 }
 
+// "Próximos": TODOS los viajes futuros que aceptan solicitudes, sin ventana de hora, del más pronto
+// al más tarde. Con punto de recogida (y bajada) aplica la regla de distancia a la ruta de la sección 5;
+// sin punto, lista todo lo disponible (distancia_pie_m = null). Para "a tal hora" se usa buscar().
+const LIMITE_PROXIMOS_DEFECTO = 30;
+const LIMITE_PROXIMOS_MAXIMO = 100;
+const HORIZONTE_PROXIMOS_DIAS = 30; // igual que la anticipación máxima al publicar
+
+function leerProximos(q = {}) {
+  const errores = {};
+  const recogida = v.leerPuntoDeQuery(q.recogida_lat, q.recogida_lng, 'recogida', errores);
+  const bajada = v.leerPuntoDeQuery(q.bajada_lat, q.bajada_lng, 'bajada', errores);
+  if (bajada && !recogida && !errores.recogida) errores.bajada = 'Manda también el punto de recogida';
+  const limite = q.limite === undefined ? LIMITE_PROXIMOS_DEFECTO : Number(q.limite);
+  if (!Number.isInteger(limite) || limite < 1 || limite > LIMITE_PROXIMOS_MAXIMO) {
+    errores.limite = `Entero de 1 a ${LIMITE_PROXIMOS_MAXIMO}`;
+  }
+  v.lanzarSiHayErrores(errores);
+  return { recogida, bajada, limite };
+}
+
+async function proximos(tenant, pasajeroId, query) {
+  const { recogida, bajada, limite } = leerProximos(query);
+  const ahora = new Date();
+
+  // Los candidatos salen ordenados por cercanía a "ahora", o sea, del más pronto al más tarde.
+  const filas = await withTenant(tenant.schema, (db) =>
+    repo.listarCandidatos(db, {
+      pasajeroId,
+      desde: ahora,
+      hasta: new Date(ahora.getTime() + HORIZONTE_PROXIMOS_DIAS * 86_400_000),
+      deseada: ahora,
+      limite: REGLAS.MAX_CANDIDATOS,
+    }),
+  );
+
+  const resultados = [];
+  for (const f of filas) {
+    if (!recogida) {
+      resultados.push(aResultado(f, { distanciaPieM: null, puntoAbordaje: null }, ahora));
+    } else {
+      const ev = evaluarRuta(f.polilinea, recogida, bajada);
+      if (ev.compatible) resultados.push(aResultado(f, ev, ahora));
+    }
+    if (resultados.length === limite) break;
+  }
+
+  return {
+    resultados,
+    criterios: { con_recogida: Boolean(recogida), max_distancia_pie_m: REGLAS.MAX_DISTANCIA_PIE_M },
+  };
+}
+
 // ---------- Cancelar (RF-11) ----------
 
 function mensajeCancelacion(viaje, motivo) {
@@ -344,6 +396,7 @@ module.exports = {
   cerrarVencidos,
   publicar,
   buscar,
+  proximos,
   republicar,
   misViajes,
   detalle,

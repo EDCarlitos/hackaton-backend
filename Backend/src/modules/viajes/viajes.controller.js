@@ -15,6 +15,11 @@ async function buscar(req, res) {
   res.json(resultado);
 }
 
+async function proximos(req, res) {
+  const resultado = await service.proximos(req.tenant, req.auth.usuarioId, req.query);
+  res.json(resultado);
+}
+
 async function detalle(req, res) {
   const viaje = await service.detalle(req.tenant, req.auth.usuarioId, req.params.id);
   res.json({ viaje });
@@ -30,4 +35,4 @@ async function cancelar(req, res) {
   res.json(resultado);
 }
 
-module.exports = { publicar, misViajes, buscar, detalle, republicar, cancelar };
+module.exports = { publicar, misViajes, buscar, proximos, detalle, republicar, cancelar };

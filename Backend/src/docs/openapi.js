@@ -329,6 +329,39 @@ module.exports = {
         },
       },
     },
+    '/viajes/proximos': {
+      get: {
+        tags: ['Pasajeros'],
+        summary: 'Todos los viajes próximos con lugar (sin ventana de hora)',
+        description:
+          'Lista los viajes que aceptan solicitudes en los próximos 30 días, **del más pronto al más tarde**, sin la ventana de ' +
+          '±15 min de `/viajes/buscar` (que es para "a tal hora"). Excluye los propios, los llenos, los que ya salieron y los ' +
+          'cancelados. Sin punto de recogida lista todo (`distancia_pie_m` = null); con recogida (y bajada opcional) aplica la ' +
+          'regla de distancia a la ruta de la sección 5. Se evalúan como máximo los 300 viajes más próximos.',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'recogida_lat', in: 'query', description: 'Opcional, junto con recogida_lng', schema: { type: 'number', example: 21.1762 } },
+          { name: 'recogida_lng', in: 'query', schema: { type: 'number', example: -86.8492 } },
+          { name: 'bajada_lat', in: 'query', description: 'Opcional; requiere recogida', schema: { type: 'number', example: 21.2 } },
+          { name: 'bajada_lng', in: 'query', schema: { type: 'number', example: -86.823 } },
+          { name: 'limite', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 30 } },
+        ],
+        responses: {
+          200: jsonRespuesta('Del más pronto al más tarde', {
+            resultados: { type: 'array', items: { $ref: '#/components/schemas/ResultadoBusqueda' } },
+            criterios: {
+              type: 'object',
+              properties: {
+                con_recogida: { type: 'boolean' },
+                max_distancia_pie_m: { type: 'integer', example: 400 },
+              },
+            },
+          }),
+          400: errorResponse('Parámetros inválidos (bajada sin recogida, límite fuera de rango)', ['VALIDACION']),
+          401: noAutenticado,
+        },
+      },
+    },
     '/viajes/{id}': {
       get: {
         tags: ['Viajes'],
