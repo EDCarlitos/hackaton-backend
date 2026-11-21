@@ -102,4 +102,13 @@ function proyectarEnRuta(puntos, p) {
   return mejor;
 }
 
-module.exports = { distanciaKm, codificarPolilinea, decodificarPolilinea, proyectarEnRuta };
+// RNF-03/RNF-04: el origen y destino del conductor se guardan aproximados, nunca el domicilio exacto.
+// 3 decimales ≈ 110 m de latitud y ≈ 104 m de longitud en Cancún. La ruta se calcula desde el punto ya
+// redondeado, así que tampoco la polilínea revela la casa.
+const DECIMALES_APROXIMADO = 3;
+function aproximar(punto) {
+  const f = 10 ** DECIMALES_APROXIMADO;
+  return { ...punto, lat: Math.round(punto.lat * f) / f, lng: Math.round(punto.lng * f) / f };
+}
+
+module.exports = { distanciaKm, codificarPolilinea, decodificarPolilinea, proyectarEnRuta, aproximar, DECIMALES_APROXIMADO };

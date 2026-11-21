@@ -1,6 +1,6 @@
 // Lectores de campos comunes. Cada uno devuelve el valor limpio, o null y anota el error en `errores`.
 const { ValidationError } = require('../errors');
-const { distanciaKm } = require('./geo');
+const { distanciaKm, aproximar } = require('./geo');
 
 const HORA_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const ISO_CON_ZONA_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
@@ -76,14 +76,15 @@ function leerPuntoDeQuery(lat, lng, campo, errores, { requerido = false } = {}) 
   return leerPunto({ lat: aNum(lat), lng: aNum(lng) }, campo, errores);
 }
 
-// Lee origen y destino y verifica que no sean el mismo lugar.
+// Lee origen y destino del conductor, verifica que no sean el mismo lugar y los devuelve
+// aproximados (≈ 100 m) para no guardar su domicilio exacto (RNF-03, RNF-04).
 function leerOrigenDestino(body, errores) {
   const origen = leerPunto(body.origen, 'origen', errores);
   const destino = leerPunto(body.destino, 'destino', errores);
   if (origen && destino && distanciaKm(origen, destino) < DISTANCIA_MINIMA_KM) {
     errores.destino = 'El destino debe ser distinto del origen';
   }
-  return { origen, destino };
+  return { origen: origen && aproximar(origen), destino: destino && aproximar(destino) };
 }
 
 function leerAsientos(valor, campo, errores, { requerido = true } = {}) {

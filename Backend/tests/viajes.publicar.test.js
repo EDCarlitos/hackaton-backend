@@ -2,7 +2,7 @@ const { describe, it, before, after, afterEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const mapas = require('../src/shared/maps');
 const { BadGatewayError, ValidationError } = require('../src/shared/errors');
-const { decodificarPolilinea } = require('../src/shared/utils/geo');
+const { aproximar, decodificarPolilinea } = require('../src/shared/utils/geo');
 const {
   api,
   pool,
@@ -49,13 +49,15 @@ describe('POST /viajes (publicar)', () => {
     assert.equal(viaje.asientos_disponibles, 3);
     assert.equal(viaje.costo_referencia, 25.5);
     assert.equal(new Date(viaje.salida_en).toISOString(), salida);
-    assert.deepEqual(viaje.origen, ORIGEN);
-    assert.deepEqual(viaje.destino, DESTINO);
+    assert.deepEqual(viaje.origen, aproximar(ORIGEN));
+    assert.deepEqual(viaje.destino, aproximar(DESTINO));
     assert.equal(typeof viaje.ruta.distancia_km, 'number');
     assert.ok(viaje.ruta.duracion_min > 0);
     const puntos = decodificarPolilinea(viaje.ruta.polilinea);
-    assert.deepEqual(puntos[0], { lat: ORIGEN.lat, lng: ORIGEN.lng });
-    assert.deepEqual(puntos.at(-1), { lat: DESTINO.lat, lng: DESTINO.lng });
+    const { lat: latO, lng: lngO } = aproximar(ORIGEN);
+    const { lat: latD, lng: lngD } = aproximar(DESTINO);
+    assert.deepEqual(puntos[0], { lat: latO, lng: lngO });
+    assert.deepEqual(puntos.at(-1), { lat: latD, lng: lngD });
 
     // Efecto real en la BD del tenant.
     const [fila] = await viajesDe(c.usuario.id);
@@ -63,6 +65,22 @@ describe('POST /viajes (publicar)', () => {
     assert.equal(fila.polilinea, viaje.ruta.polilinea);
     assert.equal(Number(fila.distancia_km), viaje.ruta.distancia_km);
     assert.equal(fila.vehiculo_id, c.vehiculo.id);
+  });
+
+  it('RNF-03: guarda origen y destino aproximados (≈100 m) y calcula la ruta desde ahí', async () => {
+    const c = await crearConductor();
+    const espia = espiarMapas();
+    const casa = { lat: 21.176249, lng: -86.849187, texto: 'Mi casa' };
+
+    const res = await publicarViaje(c.token, { origen: casa });
+
+    assert.equal(res.status, 201, JSON.stringify(res.body));
+    assert.deepEqual(res.body.viaje.origen, { lat: 21.176, lng: -86.849, texto: 'Mi casa' });
+    // A Google (o al simulado) nunca le llega el punto exacto.
+    assert.deepEqual(espia.mock.calls[0].arguments[0], { lat: 21.176, lng: -86.849, texto: 'Mi casa' });
+    const [fila] = await viajesDe(c.usuario.id);
+    assert.equal(Number(fila.origen_lat), 21.176);
+    assert.equal(Number(fila.origen_lng), -86.849);
   });
 
   it('si el conductor tiene UN solo vehículo activo, vehiculo_id es opcional', async () => {

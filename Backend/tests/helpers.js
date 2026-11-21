@@ -94,17 +94,19 @@ async function crearReserva(viajeId, pasajeroId, estado = 'solicitada') {
 // Zona geográfica exclusiva (cada llamada se desplaza ~11 km al sur de Cancún), para que las
 // búsquedas de un test no vean los viajes de otros. La ruta simulada es una "L": sube por la
 // longitud del origen y luego va al este por la latitud del destino.
+// Origen y destino ya caen en la cuadrícula de 3 decimales, así que el redondeo de privacidad
+// (geo.aproximar) no los mueve y las distancias de abajo se conservan.
 let zonas = 0;
 function zonaDePrueba() {
   zonas += 1;
   const lat = 19 + zonas * 0.1;
   const r6 = (x) => Math.round(x * 1e6) / 1e6; // igual que numeric(9,6) de la BD
   return {
-    origen: { lat: r6(lat), lng: -86.8678, texto: 'Origen de prueba' },
-    destino: { lat: r6(lat + 0.0178), lng: -86.8226, texto: 'Destino de prueba' },
-    cerca: { lat: r6(lat + 0.008), lng: -86.867, texto: 'Esquina cercana' }, // ~84 m del tramo vertical
-    cercaDelInicio: { lat: r6(lat + 0.001), lng: -86.8672 }, // ~62 m, al principio de la ruta
-    cercaDelDestino: { lat: r6(lat + 0.017), lng: -86.83 }, // ~89 m, al final de la ruta
+    origen: { lat: r6(lat), lng: -86.868, texto: 'Origen de prueba' },
+    destino: { lat: r6(lat + 0.018), lng: -86.823, texto: 'Destino de prueba' },
+    cerca: { lat: r6(lat + 0.008), lng: -86.8672, texto: 'Esquina cercana' }, // ~84 m del tramo vertical
+    cercaDelInicio: { lat: r6(lat + 0.001), lng: -86.8674 }, // ~63 m, al principio de la ruta
+    cercaDelDestino: { lat: r6(lat + 0.0172), lng: -86.83 }, // ~89 m, al final de la ruta
     lejos: { lat: r6(lat + 0.008), lng: -86.85 }, // ~1.8 km
   };
 }

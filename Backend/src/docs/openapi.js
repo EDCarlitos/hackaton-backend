@@ -218,6 +218,7 @@ module.exports = {
         summary: 'Publicar un viaje (RF-05, RF-06, RF-07)',
         description:
           'El frontend obtiene `origen` y `destino` del mapa o del autocompletado de Places. ' +
+          'Por privacidad (RNF-03), el backend los redondea a 3 decimales (≈100 m) antes de guardarlos y de calcular la ruta. ' +
           'El backend consulta la ruta de manejo en Google Routes API **una sola vez** y la guarda ' +
           '(polilínea codificada, distancia y duración). Antes de consultar a Google se valida el body y el vehículo. ' +
           'Si `vehiculo_id` no se manda y el conductor tiene exactamente un vehículo activo, se usa ese.',
@@ -866,7 +867,9 @@ module.exports = {
       Punto: {
         type: 'object',
         required: ['lat', 'lng'],
-        description: 'Coordenadas del mapa o de Places. `texto` es una referencia aproximada (no el domicilio exacto).',
+        description:
+          'Coordenadas del mapa o de Places. `texto` es una referencia aproximada (no el domicilio exacto). ' +
+          'En el origen y destino del conductor (viajes y trayectos), lat/lng se guardan redondeados a 3 decimales (≈100 m).',
         properties: {
           lat: { type: 'number', minimum: -90, maximum: 90, example: 21.1826 },
           lng: { type: 'number', minimum: -180, maximum: 180, example: -86.8678 },

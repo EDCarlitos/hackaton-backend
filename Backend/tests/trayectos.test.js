@@ -2,6 +2,7 @@ const { describe, it, before, after, afterEach, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const env = require('../src/config/env');
 const mapas = require('../src/shared/maps');
+const { aproximar } = require('../src/shared/utils/geo');
 const {
   api,
   pool,
@@ -63,7 +64,7 @@ describe('POST /trayectos (guardar plantilla)', () => {
     assert.equal(t.nombre, 'Casa → UCaribe');
     assert.equal(t.hora_habitual, '07:00');
     assert.equal(t.asientos, 3);
-    assert.deepEqual(t.origen, ORIGEN);
+    assert.deepEqual(t.origen, aproximar(ORIGEN)); // RNF-04: plantillas con origen aproximado
     assert.equal(t.vehiculo.id, c.vehiculo.id);
     assert.ok(t.ruta.polilinea && t.ruta.distancia_km > 0 && t.ruta.duracion_min > 0);
     const { rows } = await pool.query('SELECT conductor_id, polilinea FROM ucaribe.trayectos WHERE id = $1', [t.id]);
