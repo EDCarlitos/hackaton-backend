@@ -16,7 +16,15 @@ import { StatusChip } from '../components/ui/StatusChip'
 import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { api } from '../lib/api'
-import { aInputFechaHora, ESTADO_RESERVA, formatDia, formatDiaHora, formatMetros, formatRangoHora } from '../lib/format'
+import {
+  aInputFechaHora,
+  ESTADO_RESERVA,
+  formatCostoCorto,
+  formatDia,
+  formatDiaHora,
+  formatMetros,
+  formatRangoHora,
+} from '../lib/format'
 
 const MODALS = { SEARCH: 'search', NOTIFICATIONS: 'notifications', PROFILE: 'profile' }
 const ORDEN = { CERCANIA: 'Más cercano', HORA: 'Más próximo' }
@@ -183,7 +191,9 @@ export function HomePage({ navigate }) {
               pie={
                 <>
                   <SeatCount taken={r.asientos_ofrecidos - r.asientos_disponibles} total={r.asientos_ofrecidos} />
-                  <span>Recogida a {formatMetros(r.distancia_pie_m)}</span>
+                  <span>
+                    Recogida a {formatMetros(r.distancia_pie_m)} · <b className="font-semibold">{formatCostoCorto(r.costo_referencia)}</b>
+                  </span>
                 </>
               }
             />

@@ -31,6 +31,9 @@ export const formatMetros = (m) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : 
 
 export const formatCosto = (c) => (c === null || c === undefined ? 'Sin costo indicado' : `$${Number(c).toFixed(0)} de referencia`)
 
+/** Versión corta para tarjetas: "$18" o "Sin costo". */
+export const formatCostoCorto = (c) => (c === null || c === undefined ? 'Sin costo' : `$${Number(c).toFixed(0)}`)
+
 export const formatRuta = (origen, destino) => `${origen?.texto || 'Origen'} → ${destino?.texto || 'Destino'}`
 
 export const ESTADO_VIAJE = {
