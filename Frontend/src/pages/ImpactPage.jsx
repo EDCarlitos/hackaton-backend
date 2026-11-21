@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CarFront, ExternalLink, Leaf, Route as RouteIcon, Users } from 'lucide-react'
 import { BottomNav } from '../components/layout/BottomNav'
+import { DetailHeader } from '../components/layout/DetailHeader'
 import { PhoneFrame } from '../components/layout/PhoneFrame'
 import { ErrorBanner, Loading } from '../components/ui/Feedback'
 import { StatusChip } from '../components/ui/StatusChip'
@@ -19,13 +20,13 @@ export function ImpactPage({ navigate }) {
 
   return (
     <PhoneFrame className="app-screen">
-      <header className="simple-header flex items-start justify-between">
-        <div>
-          <h1>Impacto</h1>
-          <p>Lo que ahorramos al compartir el auto</p>
-        </div>
-        {metodo && <StatusChip>{metodo.etiqueta}</StatusChip>}
-      </header>
+      <DetailHeader
+        title="Tu impacto"
+        subtitle="Lo que ahorramos al compartir el auto"
+        status={metodo?.etiqueta}
+        statusActivo={false}
+        onBack={() => navigate(PAGES.HOME)}
+      />
 
       <div className="mt-5 grid grid-cols-2 gap-1 rounded-xl bg-surface p-1 text-sm font-medium">
         {[
@@ -48,7 +49,7 @@ export function ImpactPage({ navigate }) {
 
       {m && (
         <>
-          <section className="mt-5 rounded-[20px] bg-coral p-5">
+          <section className="mt-5 rounded-[20px] bg-coral p-5 text-white">
             <p className="flex items-center gap-2 text-sm font-medium">
               <Leaf size={18} /> CO₂ evitado <small className="font-normal">(estimación)</small>
             </p>
@@ -105,7 +106,7 @@ export function ImpactPage({ navigate }) {
         </section>
       )}
 
-      <BottomNav activePage={PAGES.IMPACT} navigate={navigate} />
+      <BottomNav activePage={null} navigate={navigate} />
     </PhoneFrame>
   )
 }

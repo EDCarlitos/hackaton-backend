@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CarFront, LogOut, Trash2, User } from 'lucide-react'
+import { CarFront, ChevronRight, Leaf, LogOut, Trash2, User } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useAsync } from '../../hooks/useAsync'
 import { api } from '../../lib/api'
@@ -8,7 +8,7 @@ import { Modal } from '../ui/Modal'
 import { PrimaryButton } from '../ui/PrimaryButton'
 
 /** Perfil: datos, vehículos (RF-03), aviso de privacidad (RNF-04) y cerrar sesión. */
-export function ProfileModal({ onClose }) {
+export function ProfileModal({ onVerImpacto, onClose }) {
   const { usuario, cerrarSesion } = useAuth()
   const vehiculos = useAsync(() => api.get('/vehiculos'))
   const [error, setError] = useState(null)
@@ -34,6 +34,21 @@ export function ProfileModal({ onClose }) {
           <p className="text-sm text-muted">{usuario.correo}</p>
         </div>
       </div>
+
+      {onVerImpacto && (
+        <button
+          type="button"
+          className="mb-5 flex w-full items-center gap-3 rounded-xl bg-surface px-4 py-3 text-left text-sm"
+          onClick={onVerImpacto}
+        >
+          <Leaf size={18} className="text-coral" />
+          <span className="flex-1">
+            <b className="block font-semibold">Tu impacto</b>
+            <small className="text-muted">CO₂ que evitas al compartir el auto</small>
+          </span>
+          <ChevronRight size={18} />
+        </button>
+      )}
 
       <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
         <CarFront size={16} /> Mis vehículos
