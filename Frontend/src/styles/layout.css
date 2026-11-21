@@ -60,9 +60,10 @@
   position: sticky;
   bottom: 0;
   z-index: 10;
-  height: 100px;
+  min-height: 100px;
   margin: 0 -24px;
-  padding: 12px 24px 24px;
+  /* La barra se queda sobre la zona del gesto de inicio del iPhone (viewport-fit=cover). */
+  padding: 12px 24px calc(24px + env(safe-area-inset-bottom, 0px));
   display: flex;
   align-items: center;
   border-top: 1px solid var(--color-line);

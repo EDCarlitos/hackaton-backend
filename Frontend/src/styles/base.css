@@ -22,6 +22,41 @@
   h1 {
     font-family: var(--font-display);
   }
+
+  /* Móvil: sin destello al tocar, sin zoom de fuente en horizontal y sin pull-to-refresh. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    overscroll-behavior: none;
+  }
+  /* Los controles responden al instante (sin espera de doble toque) y no se seleccionan al mantener. */
+  button,
+  a,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+  button,
+  [role='button'] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  fieldset {
+    min-width: 0; /* sin esto, un fieldset no se encoge y desborda en móvil */
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+  legend {
+    padding: 0;
+  }
+  /* iOS hace zoom en inputs de menos de 16 px. */
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
 }
 
 .prototype {
