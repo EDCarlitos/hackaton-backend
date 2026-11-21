@@ -61,4 +61,45 @@ function decodificarPolilinea(texto) {
   return puntos;
 }
 
-module.exports = { distanciaKm, codificarPolilinea, decodificarPolilinea };
+// Punto de la ruta (lista de { lat, lng }) más cercano a `p`.
+// Devuelve { distanciaM, punto, avanceM }: distancia en línea recta de p a la ruta, el punto
+// más cercano sobre ella y cuántos metros de ruta hay desde el inicio hasta ese punto
+// (sirve para saber si un punto queda antes o después que otro en el sentido del viaje).
+// Usa una proyección plana local alrededor de p: a escala de ciudad el error es despreciable.
+function proyectarEnRuta(puntos, p) {
+  if (!puntos.length) return null;
+  const k = Math.cos(rad(p.lat));
+  const aXY = (q) => ({ x: rad(q.lng - p.lng) * k * RADIO_TIERRA_KM * 1000, y: rad(q.lat - p.lat) * RADIO_TIERRA_KM * 1000 });
+
+  if (puntos.length === 1) {
+    const a = aXY(puntos[0]);
+    return { distanciaM: Math.hypot(a.x, a.y), punto: puntos[0], avanceM: 0 };
+  }
+
+  let mejor = null;
+  let recorridoM = 0;
+  for (let i = 0; i < puntos.length - 1; i++) {
+    const [p1, p2] = [puntos[i], puntos[i + 1]];
+    const a = aXY(p1);
+    const b = aXY(p2);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const largo2 = dx * dx + dy * dy;
+    // t = posición (0..1) de la proyección de p (el origen del plano) sobre el segmento a→b.
+    const t = largo2 ? Math.min(1, Math.max(0, -(a.x * dx + a.y * dy) / largo2)) : 0;
+    const distanciaM = Math.hypot(a.x + t * dx, a.y + t * dy);
+    const tramoM = distanciaKm(p1, p2) * 1000;
+
+    if (!mejor || distanciaM < mejor.distanciaM) {
+      mejor = {
+        distanciaM,
+        punto: { lat: p1.lat + t * (p2.lat - p1.lat), lng: p1.lng + t * (p2.lng - p1.lng) },
+        avanceM: recorridoM + t * tramoM,
+      };
+    }
+    recorridoM += tramoM;
+  }
+  return mejor;
+}
+
+module.exports = { distanciaKm, codificarPolilinea, decodificarPolilinea, proyectarEnRuta };

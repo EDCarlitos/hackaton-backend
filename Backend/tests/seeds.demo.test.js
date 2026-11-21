@@ -42,6 +42,40 @@ describe('datos demo de ucaribe', () => {
     assert.equal(res.status, 201, JSON.stringify(res.body));
   });
 
+  it('la búsqueda de ejemplo de 002_demo_busqueda.sql da el orden documentado', async () => {
+    const token = await login('valeria.pasajera@ucaribe.edu.mx');
+    // Cancún no tiene horario de verano: siempre -05:00.
+    const manana = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Cancun' }).format(
+      new Date(Date.now() + 86_400_000),
+    );
+    const base = `/viajes/buscar?recogida_lat=21.1762&recogida_lng=-86.8492&salida_en=${encodeURIComponent(`${manana}T07:00:00-05:00`)}`;
+    const nombres = (res) => res.body.resultados.map((r) => r.conductor.nombre_visible);
+
+    const sinBajada = await api().get(base).set(auth(token)).expect(200);
+    // Pedro no sale: su ruta pasa a 524 m (R = 400 m).
+    assert.deepEqual(nombres(sinBajada), ['Rosa Tun', 'Carla Uc', 'Ana López']);
+
+    const conBajada = await api().get(`${base}&bajada_lat=21.2000&bajada_lng=-86.8230`).set(auth(token)).expect(200);
+    assert.deepEqual(nombres(conBajada), ['Carla Uc', 'Ana López']);
+
+    // Valeria puede pedir lugar con Carla (no tiene otras reservas que se crucen).
+    const carla = conBajada.body.resultados[0];
+    await api()
+      .post('/reservas')
+      .set(auth(token))
+      .send({ viaje_id: carla.viaje_id, recogida: { lat: 21.1762, lng: -86.8492 } })
+      .expect(201);
+  });
+
+  it('el historial demo alimenta el contador de impacto', async () => {
+    const token = await login('carla.conductora@ucaribe.edu.mx');
+    const { body } = await api().get('/impacto').set(auth(token)).expect(200);
+    assert.equal(body.mio.viajes_compartidos, 10);
+    assert.ok(body.mio.asientos_ocupados >= 10);
+    assert.ok(body.institucion.co2_evitado_kg > body.mio.co2_evitado_kg - 0.01);
+    assert.equal(body.metodologia.etiqueta, 'Estimación');
+  });
+
   it('volver a correr los seeds no duplica nada', async () => {
     const contar = async () =>
       (

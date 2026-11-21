@@ -67,6 +67,15 @@ function leerPunto(valor, campo, errores) {
   return { lat, lng, texto: textoLimpio };
 }
 
+// Punto que llega por query string (?x_lat=21.18&x_lng=-86.86): todo es texto, se convierte a número.
+// Devuelve null si no se mandó ninguno de los dos (y no es requerido).
+const NUMERO_RE = /^-?\d{1,3}(\.\d+)?$/; // cualquier cantidad de decimales (floats de JS)
+function leerPuntoDeQuery(lat, lng, campo, errores, { requerido = false } = {}) {
+  if (lat === undefined && lng === undefined && !requerido) return null;
+  const aNum = (x) => (typeof x === 'string' && NUMERO_RE.test(x.trim()) ? Number(x) : NaN);
+  return leerPunto({ lat: aNum(lat), lng: aNum(lng) }, campo, errores);
+}
+
 // Lee origen y destino y verifica que no sean el mismo lugar.
 function leerOrigenDestino(body, errores) {
   const origen = leerPunto(body.origen, 'origen', errores);
@@ -135,6 +144,7 @@ module.exports = {
   leerTexto,
   leerPunto,
   leerOrigenDestino,
+  leerPuntoDeQuery,
   leerAsientos,
   leerSalida,
   errorVentanaSalida,

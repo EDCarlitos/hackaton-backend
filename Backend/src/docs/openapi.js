@@ -30,7 +30,11 @@ module.exports = {
     { name: 'Vehículos', description: 'Vehículos del conductor (cada viaje usa uno)' },
     { name: 'Viajes', description: 'Publicar, "Mis viajes", publicar de nuevo y cancelar (RF-05 a RF-08, RF-10, RF-11)' },
     { name: 'Trayectos', description: 'Plantillas "Mi trayecto" y botón "Salgo hoy" (RF-09)' },
-    { name: 'Notificaciones', description: 'Avisos dentro de la app (ej. viaje cancelado)' },
+    { name: 'Pasajeros', description: 'Buscar viajes compatibles, solicitar asiento y cancelar (RF-12 a RF-15)' },
+    { name: 'Reservas', description: 'El conductor acepta o rechaza; ambas partes ven la reserva (RF-16 a RF-22)' },
+    { name: 'Chat', description: 'Chat de grupo del viaje (RF-23)' },
+    { name: 'Impacto', description: 'Contador de impacto ambiental con metodología visible (RF-23, RF-24)' },
+    { name: 'Notificaciones', description: 'Avisos dentro de la app (cancelaciones, solicitudes, aceptaciones y rechazos)' },
   ],
   paths: {
     '/auth/register': {
@@ -282,6 +286,48 @@ module.exports = {
         },
       },
     },
+    '/viajes/buscar': {
+      get: {
+        tags: ['Pasajeros'],
+        summary: 'Buscar viajes compatibles (RF-12, RF-13, RF-14)',
+        description:
+          'El pasajero elige su punto de recogida en el mapa (y opcionalmente el de bajada). Se devuelven los viajes que: ' +
+          'aceptan solicitudes (`abierto` y sin salir, o `en_curso` antes de `reservas_cierran_en`), tienen al menos 1 asiento (RF-19), ' +
+          'no son del propio usuario, salen dentro de ±`ventana_min` de la hora deseada y cuya ruta pasa a ≤ `max_distancia_pie_m` ' +
+          'de la recogida (y de la bajada, en el sentido del viaje). ' +
+          'Orden: **distancia a pie a la ruta** y luego **diferencia de hora**. Las reglas vienen en `criterios` ' +
+          '(se configuran en `shared/utils/emparejamiento.js`).',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'recogida_lat', in: 'query', required: true, schema: { type: 'number', example: 21.1762 } },
+          { name: 'recogida_lng', in: 'query', required: true, schema: { type: 'number', example: -86.8492 } },
+          { name: 'bajada_lat', in: 'query', description: 'Opcional, junto con bajada_lng', schema: { type: 'number', example: 21.2 } },
+          { name: 'bajada_lng', in: 'query', schema: { type: 'number', example: -86.823 } },
+          {
+            name: 'salida_en',
+            in: 'query',
+            description: 'Hora deseada, ISO 8601 con zona (codifica el `+` en la URL). Por defecto: ahora',
+            schema: { type: 'string', format: 'date-time', example: '2026-11-21T07:00:00-05:00' },
+          },
+          { name: 'limite', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 50, default: 20 } },
+        ],
+        responses: {
+          200: jsonRespuesta('Resultados ordenados', {
+            resultados: { type: 'array', items: { $ref: '#/components/schemas/ResultadoBusqueda' } },
+            criterios: {
+              type: 'object',
+              properties: {
+                salida_deseada: { type: 'string', format: 'date-time' },
+                ventana_min: { type: 'integer', example: 15 },
+                max_distancia_pie_m: { type: 'integer', example: 400 },
+              },
+            },
+          }),
+          400: errorResponse('Parámetros inválidos (un mensaje por parámetro)', ['VALIDACION']),
+          401: noAutenticado,
+        },
+      },
+    },
     '/viajes/{id}': {
       get: {
         tags: ['Viajes'],
@@ -483,6 +529,228 @@ module.exports = {
       },
     },
 
+    // ---------- Reservas (pasajero) ----------
+    '/reservas': {
+      post: {
+        tags: ['Pasajeros'],
+        summary: 'Solicitar un asiento (RF-15)',
+        description:
+          'Una solicitud = un asiento. Queda `solicitada` hasta que el conductor responda; el asiento se descuenta al **confirmar**. ' +
+          'Se aplican las mismas reglas de ruta que en la búsqueda. El conductor recibe una notificación `reserva_solicitada`.',
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/SolicitarReservaInput' },
+              example: {
+                viaje_id: 2,
+                recogida: { lat: 21.1762, lng: -86.8492, texto: 'Plaza Cancún 2000' },
+                bajada: { lat: 21.2, lng: -86.823 },
+              },
+            },
+          },
+        },
+        responses: {
+          201: jsonRespuesta('Solicitud creada', { reserva: { $ref: '#/components/schemas/Reserva' } }),
+          400: errorResponse('Datos inválidos, punto lejos de la ruta o sentido contrario', [
+            'VALIDACION',
+            'FUERA_DE_RUTA',
+            'SENTIDO_CONTRARIO',
+            'JSON_INVALIDO',
+          ]),
+          401: noAutenticado,
+          404: errorResponse('El viaje no existe', ['VIAJE_NO_ENCONTRADO']),
+          409: errorResponse(
+            'Es tu viaje, ya no tiene asientos, ya no acepta solicitudes, ya tienes una vigente en este viaje, o tienes otra reserva que se cruza en el tiempo (RF-22)',
+            ['ES_TU_VIAJE', 'VIAJE_LLENO', 'VIAJE_NO_DISPONIBLE', 'RESERVA_DUPLICADA', 'RESERVA_TRASLAPADA'],
+          ),
+        },
+      },
+    },
+    '/reservas/mias': {
+      get: {
+        tags: ['Pasajeros'],
+        summary: 'Mis reservas, con el resumen del viaje',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          {
+            name: 'cuando',
+            in: 'query',
+            description: '`proximas` (ascendente), `pasadas` o `todas` (descendente)',
+            schema: { type: 'string', enum: ['proximas', 'pasadas', 'todas'], default: 'todas' },
+          },
+          { name: 'limite', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
+        ],
+        responses: {
+          200: jsonRespuesta('Lista', { reservas: { type: 'array', items: { $ref: '#/components/schemas/ReservaConViaje' } } }),
+          400: errorResponse('Filtros inválidos', ['VALIDACION']),
+          401: noAutenticado,
+        },
+      },
+    },
+    '/reservas/{id}/cancelar': {
+      post: {
+        tags: ['Pasajeros'],
+        summary: 'Cancelar mi solicitud o mi lugar (RF-15)',
+        description:
+          'Solo antes de la salida y con la reserva `solicitada` o `confirmada`. Si estaba confirmada se libera el asiento ' +
+          '(y un viaje `lleno` vuelve a `abierto`). El conductor recibe una notificación `reserva_cancelada`.',
+        security: [{ bearerAuth: [] }],
+        parameters: [idParam],
+        responses: {
+          200: jsonRespuesta('Reserva cancelada', { reserva: { $ref: '#/components/schemas/Reserva' } }),
+          401: noAutenticado,
+          404: errorResponse('No existe o no es tuya', ['RESERVA_NO_ENCONTRADA']),
+          409: errorResponse('El viaje ya salió o la reserva ya no está vigente', ['RESERVA_NO_CANCELABLE']),
+        },
+      },
+    },
+
+    '/reservas/{id}': {
+      get: {
+        tags: ['Reservas'],
+        summary: 'Detalle de una reserva (RF-18)',
+        description:
+          'Lo ven el pasajero y el conductor del viaje: estado, punto de recogida y `punto_abordaje` (el punto de la ruta ' +
+          'más cercano, donde se sube). `soy` indica el papel de quien consulta. Para cualquier otro usuario es 404.',
+        security: [{ bearerAuth: [] }],
+        parameters: [idParam],
+        responses: {
+          200: jsonRespuesta('Reserva', { reserva: { $ref: '#/components/schemas/ReservaDetalle' } }),
+          401: noAutenticado,
+          404: errorResponse('No existe o no participas', ['RESERVA_NO_ENCONTRADA']),
+        },
+      },
+    },
+    '/reservas/{id}/aceptar': {
+      post: {
+        tags: ['Reservas'],
+        summary: 'Aceptar una solicitud (conductor, RF-16, RF-17, RF-21)',
+        description:
+          'En una transacción con el viaje bloqueado: la reserva pasa a `confirmada` y se descuenta un asiento. ' +
+          'Si el viaje llega a 0 asientos pasa a `lleno` y **las demás solicitudes pendientes se rechazan solas** ' +
+          '(con aviso). Un trigger de la BD impide más confirmadas que asientos ofrecidos aunque se salte la API.',
+        security: [{ bearerAuth: [] }],
+        parameters: [idParam],
+        responses: {
+          200: jsonRespuesta('Aceptada', {
+            reserva: { $ref: '#/components/schemas/Reserva' },
+            viaje: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                estado: { type: 'string', enum: ['abierto', 'lleno', 'en_curso'] },
+                asientos_disponibles: { type: 'integer' },
+                asientos_ofrecidos: { type: 'integer' },
+              },
+            },
+            rechazadas_automaticamente: { type: 'integer', example: 0 },
+          }),
+          401: noAutenticado,
+          404: errorResponse('No existe o el viaje no es tuyo', ['RESERVA_NO_ENCONTRADA']),
+          409: errorResponse('Ya no está pendiente, el viaje está lleno o ya no acepta reservas', [
+            'RESERVA_NO_PENDIENTE',
+            'VIAJE_LLENO',
+            'VIAJE_NO_DISPONIBLE',
+          ]),
+        },
+      },
+    },
+    '/reservas/{id}/rechazar': {
+      post: {
+        tags: ['Reservas'],
+        summary: 'Rechazar una solicitud (conductor, RF-16)',
+        description: 'La reserva pasa a `rechazada` y el pasajero recibe un aviso. No cambia los asientos.',
+        security: [{ bearerAuth: [] }],
+        parameters: [idParam],
+        responses: {
+          200: jsonRespuesta('Rechazada', { reserva: { $ref: '#/components/schemas/Reserva' } }),
+          401: noAutenticado,
+          404: errorResponse('No existe o el viaje no es tuyo', ['RESERVA_NO_ENCONTRADA']),
+          409: errorResponse('Ya no está pendiente', ['RESERVA_NO_PENDIENTE']),
+        },
+      },
+    },
+    '/viajes/{viajeId}/mensajes': {
+      get: {
+        tags: ['Chat'],
+        summary: 'Mensajes del chat de grupo del viaje (RF-23)',
+        description:
+          'Lo leen el conductor y los pasajeros confirmados (o que ya completaron el viaje). ' +
+          'Para refrescar sin traer todo, manda `despues_de` con el id del último mensaje (polling).',
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: 'viajeId', in: 'path', required: true, schema: { type: 'integer' } },
+          { name: 'despues_de', in: 'query', schema: { type: 'integer', minimum: 0, default: 0 } },
+        ],
+        responses: {
+          200: jsonRespuesta('Mensajes', {
+            mensajes: { type: 'array', items: { $ref: '#/components/schemas/Mensaje' } },
+            participantes: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' },
+                  nombre_visible: { type: 'string' },
+                  papel: { type: 'string', enum: ['conductor', 'pasajero'] },
+                },
+              },
+            },
+            puede_escribir: { type: 'boolean' },
+          }),
+          400: errorResponse('despues_de inválido', ['VALIDACION']),
+          401: noAutenticado,
+          403: errorResponse('No eres conductor ni pasajero confirmado', ['NO_PARTICIPA']),
+          404: errorResponse('No existe el viaje', ['VIAJE_NO_ENCONTRADO']),
+        },
+      },
+      post: {
+        tags: ['Chat'],
+        summary: 'Enviar un mensaje al chat del viaje',
+        description: 'Solo el conductor o un pasajero confirmado, y mientras el viaje no esté cancelado ni finalizado.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'viajeId', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { type: 'object', required: ['texto'], properties: { texto: { type: 'string', maxLength: 500 } } },
+              example: { texto: 'Estoy en la esquina de Kabah' },
+            },
+          },
+        },
+        responses: {
+          201: jsonRespuesta('Enviado', { mensaje: { $ref: '#/components/schemas/Mensaje' } }),
+          400: errorResponse('Texto vacío o muy largo', ['VALIDACION']),
+          401: noAutenticado,
+          403: errorResponse('No eres conductor ni pasajero confirmado', ['NO_PARTICIPA']),
+          404: errorResponse('No existe el viaje', ['VIAJE_NO_ENCONTRADO']),
+          409: errorResponse('Viaje cancelado o finalizado', ['CHAT_CERRADO']),
+        },
+      },
+    },
+    '/impacto': {
+      get: {
+        tags: ['Impacto'],
+        summary: 'Contador de impacto ambiental (RF-23, RF-24)',
+        description:
+          'Totales de la institución y del usuario (como conductor o pasajero), a partir de reservas **completadas**. ' +
+          '`metodologia` trae la fórmula, el factor de emisión con su fuente y los supuestos, para mostrarlos tal cual ' +
+          'en pantalla etiquetados como estimación.',
+        security: [{ bearerAuth: [] }],
+        responses: {
+          200: jsonRespuesta('Impacto', {
+            institucion: { $ref: '#/components/schemas/MetricasImpacto' },
+            mio: { $ref: '#/components/schemas/MetricasImpacto' },
+            metodologia: { $ref: '#/components/schemas/MetodologiaImpacto' },
+          }),
+          401: noAutenticado,
+        },
+      },
+    },
+
     // ---------- Notificaciones ----------
     '/notificaciones': {
       get: {
@@ -680,6 +948,11 @@ module.exports = {
           solicitada_en: { type: 'string', format: 'date-time' },
           respondida_en: { type: 'string', format: 'date-time', nullable: true },
           recogida: { $ref: '#/components/schemas/Punto' },
+          punto_abordaje: {
+            type: 'object',
+            description: 'RF-18: punto de la ruta más cercano a la recogida (donde se sube)',
+            properties: { lat: { type: 'number' }, lng: { type: 'number' } },
+          },
           pasajero: {
             type: 'object',
             properties: { id: { type: 'integer' }, nombre_visible: { type: 'string', example: 'María Canul' } },
@@ -777,11 +1050,164 @@ module.exports = {
           },
         },
       },
+      ResultadoBusqueda: {
+        type: 'object',
+        properties: {
+          viaje_id: { type: 'integer' },
+          salida_en: { type: 'string', format: 'date-time' },
+          asientos_disponibles: { type: 'integer', example: 3 },
+          asientos_ofrecidos: { type: 'integer', example: 3 },
+          costo_referencia: { type: 'number', nullable: true, example: 15 },
+          distancia_pie_m: { type: 'integer', description: 'Del punto de recogida a la ruta (línea recta)', example: 86 },
+          punto_abordaje: {
+            type: 'object',
+            description: 'Punto de la ruta más cercano a la recogida (dónde esperar al auto)',
+            properties: { lat: { type: 'number' }, lng: { type: 'number' } },
+          },
+          distancia_bajada_m: { type: 'integer', nullable: true },
+          punto_bajada: {
+            type: 'object',
+            nullable: true,
+            properties: { lat: { type: 'number' }, lng: { type: 'number' } },
+          },
+          diferencia_min: { type: 'integer', description: 'Salida del viaje − hora deseada (negativo = antes)', example: 20 },
+          estado: { type: 'string', enum: ['abierto', 'en_curso'] },
+          origen: { $ref: '#/components/schemas/Punto' },
+          destino: { $ref: '#/components/schemas/Punto' },
+          ruta: { $ref: '#/components/schemas/Ruta' },
+          conductor: {
+            type: 'object',
+            properties: { id: { type: 'integer' }, nombre_visible: { type: 'string', example: 'Carla Uc' } },
+          },
+          vehiculo: {
+            type: 'object',
+            properties: { id: { type: 'integer' }, placa_o_descripcion: { type: 'string' } },
+          },
+          mi_reserva: {
+            type: 'object',
+            nullable: true,
+            description: 'Si ya tengo una solicitud vigente en este viaje',
+            properties: { id: { type: 'integer' }, estado: { type: 'string', enum: ['solicitada', 'confirmada'] } },
+          },
+        },
+      },
+      SolicitarReservaInput: {
+        type: 'object',
+        required: ['viaje_id', 'recogida'],
+        properties: {
+          viaje_id: { type: 'integer' },
+          recogida: { $ref: '#/components/schemas/Punto' },
+          bajada: { $ref: '#/components/schemas/Punto' },
+        },
+      },
+      Reserva: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer' },
+          viaje_id: { type: 'integer' },
+          estado: { type: 'string', enum: ['solicitada', 'confirmada', 'rechazada', 'cancelada', 'completada', 'expirada'] },
+          recogida: { $ref: '#/components/schemas/Punto' },
+          bajada: { allOf: [{ $ref: '#/components/schemas/Punto' }], nullable: true },
+          distancia_pie_m: { type: 'integer', example: 86 },
+          solicitada_en: { type: 'string', format: 'date-time' },
+          respondida_en: { type: 'string', format: 'date-time', nullable: true },
+        },
+      },
+      ReservaConViaje: {
+        allOf: [
+          { $ref: '#/components/schemas/Reserva' },
+          {
+            type: 'object',
+            properties: {
+              punto_abordaje: {
+                type: 'object',
+                description: 'RF-18: punto acordado sobre la ruta',
+                properties: { lat: { type: 'number' }, lng: { type: 'number' } },
+              },
+              viaje: {
+                type: 'object',
+                properties: {
+                  id: { type: 'integer' },
+                  estado: { type: 'string' },
+                  salida_en: { type: 'string', format: 'date-time' },
+                  costo_referencia: { type: 'number', nullable: true },
+                  origen: { $ref: '#/components/schemas/Punto' },
+                  destino: { $ref: '#/components/schemas/Punto' },
+                  ruta: { $ref: '#/components/schemas/Ruta' },
+                  conductor: {
+                    type: 'object',
+                    properties: { id: { type: 'integer' }, nombre_visible: { type: 'string' } },
+                  },
+                  vehiculo: { type: 'object', properties: { placa_o_descripcion: { type: 'string' } } },
+                },
+              },
+            },
+          },
+        ],
+      },
+      ReservaDetalle: {
+        allOf: [
+          { $ref: '#/components/schemas/ReservaConViaje' },
+          {
+            type: 'object',
+            properties: {
+              pasajero: {
+                type: 'object',
+                properties: { id: { type: 'integer' }, nombre_visible: { type: 'string' } },
+              },
+              soy: { type: 'string', enum: ['pasajero', 'conductor'] },
+            },
+          },
+        ],
+      },
+      Mensaje: {
+        type: 'object',
+        properties: {
+          id: { type: 'integer' },
+          texto: { type: 'string' },
+          enviado_en: { type: 'string', format: 'date-time' },
+          autor: { type: 'object', properties: { id: { type: 'integer' }, nombre_visible: { type: 'string' } } },
+          mio: { type: 'boolean' },
+        },
+      },
+      MetricasImpacto: {
+        type: 'object',
+        properties: {
+          viajes_compartidos: { type: 'integer', example: 10 },
+          asientos_ocupados: { type: 'integer', example: 20 },
+          km_compartidos: { type: 'number', example: 124 },
+          co2_evitado_kg: { type: 'number', example: 30.9 },
+        },
+      },
+      MetodologiaImpacto: {
+        type: 'object',
+        properties: {
+          etiqueta: { type: 'string', example: 'Estimación' },
+          formula: { type: 'string', example: 'CO₂ evitado (kg) = km compartidos × factor de emisión (kg CO₂/km)' },
+          definiciones: { type: 'object', additionalProperties: { type: 'string' } },
+          factor_emision: {
+            type: 'object',
+            properties: {
+              valor: { type: 'number', example: 0.249 },
+              unidad: { type: 'string', example: 'kg CO₂/km' },
+              calculo: { type: 'string' },
+              fuente: {
+                type: 'object',
+                properties: { nombre: { type: 'string' }, url: { type: 'string' }, cita: { type: 'string' } },
+              },
+            },
+          },
+          supuestos: { type: 'array', items: { type: 'string' } },
+        },
+      },
       Notificacion: {
         type: 'object',
         properties: {
           id: { type: 'integer' },
-          tipo: { type: 'string', enum: ['viaje_cancelado'] },
+          tipo: {
+            type: 'string',
+            enum: ['viaje_cancelado', 'reserva_solicitada', 'reserva_cancelada', 'reserva_confirmada', 'reserva_rechazada'],
+          },
           titulo: { type: 'string', example: 'Viaje cancelado' },
           mensaje: {
             type: 'string',

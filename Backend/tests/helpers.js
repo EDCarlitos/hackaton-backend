@@ -91,7 +91,34 @@ async function crearReserva(viajeId, pasajeroId, estado = 'solicitada') {
   return rows[0];
 }
 
+// Zona geográfica exclusiva (cada llamada se desplaza ~11 km al sur de Cancún), para que las
+// búsquedas de un test no vean los viajes de otros. La ruta simulada es una "L": sube por la
+// longitud del origen y luego va al este por la latitud del destino.
+let zonas = 0;
+function zonaDePrueba() {
+  zonas += 1;
+  const lat = 19 + zonas * 0.1;
+  const r6 = (x) => Math.round(x * 1e6) / 1e6; // igual que numeric(9,6) de la BD
+  return {
+    origen: { lat: r6(lat), lng: -86.8678, texto: 'Origen de prueba' },
+    destino: { lat: r6(lat + 0.0178), lng: -86.8226, texto: 'Destino de prueba' },
+    cerca: { lat: r6(lat + 0.008), lng: -86.867, texto: 'Esquina cercana' }, // ~84 m del tramo vertical
+    cercaDelInicio: { lat: r6(lat + 0.001), lng: -86.8672 }, // ~62 m, al principio de la ruta
+    cercaDelDestino: { lat: r6(lat + 0.017), lng: -86.83 }, // ~89 m, al final de la ruta
+    lejos: { lat: r6(lat + 0.008), lng: -86.85 }, // ~1.8 km
+  };
+}
+
+// Publica un viaje en la zona dada. Devuelve el viaje.
+async function publicarEnZona(conductor, zona, extra = {}) {
+  const res = await publicarViaje(conductor.token, { origen: zona.origen, destino: zona.destino, ...extra });
+  if (res.status !== 201) throw new Error(`No se pudo publicar: ${JSON.stringify(res.body)}`);
+  return res.body.viaje;
+}
+
 module.exports = {
+  zonaDePrueba,
+  publicarEnZona,
   api,
   pool,
   prepararBD,

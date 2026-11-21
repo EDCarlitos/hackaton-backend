@@ -1,10 +1,10 @@
-const env = require('../../config/env');
 const { withTenant } = require('../../config/db');
 const mapas = require('../../shared/maps');
 const { NotFoundError, ForbiddenError, ConflictError } = require('../../shared/errors');
 const { ESTADOS_VIAJE, ESTADOS_RESERVA, TIPOS_NOTIFICACION } = require('../../shared/constants/estados');
 const v = require('../../shared/utils/validacion');
-const { aNumero, aPunto, aRuta } = require('../../shared/utils/formato');
+const { REGLAS, evaluarRuta, puntoDeAbordaje } = require('../../shared/utils/emparejamiento');
+const { aNumero, aPunto, aRuta, fechaHoraLegible } = require('../../shared/utils/formato');
 const vehiculos = require('../vehiculos/vehiculos.service');
 const notificaciones = require('../notificaciones/notificaciones.service');
 const repo = require('./viajes.repository');
@@ -14,16 +14,10 @@ const CANCELABLES = new Set([ESTADOS_VIAJE.ABIERTO, ESTADOS_VIAJE.LLENO]);
 const CUANDO_VALIDOS = new Set(['proximos', 'pasados', 'todos']);
 const LIMITE_DEFECTO = 50;
 const LIMITE_MAXIMO = 100;
-
-const formatoFecha = new Intl.DateTimeFormat('es-MX', {
-  timeZone: env.zonaHoraria,
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-});
+// RF-20: un viaje se cierra solo cuando pasan estos minutos desde su hora de salida.
+const MARGEN_CIERRE_MIN = 60;
+const LIMITE_BUSQUEDA_DEFECTO = 20;
+const LIMITE_BUSQUEDA_MAXIMO = 50;
 
 const viajeNoEncontrado = () => new NotFoundError('Viaje no encontrado', { code: 'VIAJE_NO_ENCONTRADO' });
 const noEsConductor = () =>
@@ -61,6 +55,10 @@ function aViaje(f) {
 
 const contar = (reservas, estado) => reservas.filter((r) => r.estado === estado).length;
 
+// RF-18: a cada reserva se le agrega el punto acordado sobre la ruta (dónde se sube).
+const conPuntoAbordaje = (reservas, polilinea) =>
+  reservas.map((r) => ({ ...r, punto_abordaje: puntoDeAbordaje(polilinea, r.recogida) }));
+
 // Para "Mis viajes": el viaje con sus solicitudes entrantes y pasajeros confirmados.
 function aViajeDelConductor(f) {
   return {
@@ -68,7 +66,7 @@ function aViajeDelConductor(f) {
     vehiculo: { id: f.vehiculo_id, placa_o_descripcion: f.vehiculo_descripcion },
     solicitudes_pendientes: contar(f.reservas, ESTADOS_RESERVA.SOLICITADA),
     pasajeros_confirmados: contar(f.reservas, ESTADOS_RESERVA.CONFIRMADA),
-    reservas: f.reservas,
+    reservas: conPuntoAbordaje(f.reservas, f.polilinea),
   };
 }
 
@@ -195,9 +193,96 @@ async function detalle(tenant, usuarioId, idParam) {
       conductor: { id: f.conductor_id, nombre_visible: f.conductor_nombre },
       vehiculo: { id: f.vehiculo_id, placa_o_descripcion: f.vehiculo_descripcion },
     };
-    if (f.conductor_id === usuarioId) viaje.reservas = await repo.listarReservas(db, id);
+    if (f.conductor_id === usuarioId) {
+      viaje.reservas = conPuntoAbordaje(await repo.listarReservas(db, id), f.polilinea);
+    } else {
+      const mia = await repo.findMiReserva(db, id, usuarioId);
+      viaje.mi_reserva = mia && {
+        id: mia.id,
+        estado: mia.estado,
+        recogida: aPunto(mia.recogida_lat, mia.recogida_lng, mia.recogida_texto),
+        distancia_pie_m: mia.distancia_pie_m,
+        punto_abordaje: puntoDeAbordaje(f.polilinea, { lat: Number(mia.recogida_lat), lng: Number(mia.recogida_lng) }),
+      };
+    }
     return viaje;
   });
+}
+
+// ---------- Buscar (RF-12, RF-13, RF-14) ----------
+
+function leerBusqueda(q = {}) {
+  const errores = {};
+  const recogida = v.leerPuntoDeQuery(q.recogida_lat, q.recogida_lng, 'recogida', errores, { requerido: true });
+  const bajada = v.leerPuntoDeQuery(q.bajada_lat, q.bajada_lng, 'bajada', errores);
+  const salidaEn = q.salida_en === undefined ? new Date() : v.leerSalida(q.salida_en, 'salida_en', errores);
+  const limite = q.limite === undefined ? LIMITE_BUSQUEDA_DEFECTO : Number(q.limite);
+  if (!Number.isInteger(limite) || limite < 1 || limite > LIMITE_BUSQUEDA_MAXIMO) {
+    errores.limite = `Entero de 1 a ${LIMITE_BUSQUEDA_MAXIMO}`;
+  }
+  v.lanzarSiHayErrores(errores);
+  return { recogida, bajada, salidaEn, limite };
+}
+
+// Lo que ve el pasajero por cada viaje compatible (RF-14).
+function aResultado(f, ev, salidaDeseada) {
+  return {
+    viaje_id: f.id,
+    salida_en: f.salida_en,
+    asientos_disponibles: f.asientos_disponibles,
+    asientos_ofrecidos: f.asientos_ofrecidos,
+    costo_referencia: aNumero(f.costo_referencia),
+    distancia_pie_m: ev.distanciaPieM,
+    punto_abordaje: ev.puntoAbordaje,
+    distancia_bajada_m: ev.distanciaBajadaM ?? null,
+    punto_bajada: ev.puntoBajada ?? null,
+    diferencia_min: Math.round((new Date(f.salida_en) - salidaDeseada) / 60_000),
+    estado: f.estado,
+    origen: aPunto(f.origen_lat, f.origen_lng, f.origen_texto),
+    destino: aPunto(f.destino_lat, f.destino_lng, f.destino_texto),
+    ruta: aRuta(f),
+    conductor: { id: f.conductor_id, nombre_visible: f.conductor_nombre },
+    vehiculo: { id: f.vehiculo_id, placa_o_descripcion: f.vehiculo_descripcion },
+    mi_reserva: f.mi_reserva_id ? { id: f.mi_reserva_id, estado: f.mi_reserva_estado } : null,
+  };
+}
+
+// RF-13: viajes compatibles con el punto de recogida (y de bajada, si se da) según REGLAS,
+// ordenados por distancia a pie a la ruta y luego por diferencia con la hora deseada.
+async function buscar(tenant, pasajeroId, query) {
+  const { recogida, bajada, salidaEn, limite } = leerBusqueda(query);
+  const ventanaMs = REGLAS.VENTANA_HORA_MIN * 60_000;
+
+  const filas = await withTenant(tenant.schema, (db) =>
+    repo.listarCandidatos(db, {
+      pasajeroId,
+      desde: new Date(salidaEn.getTime() - ventanaMs),
+      hasta: new Date(salidaEn.getTime() + ventanaMs),
+      deseada: salidaEn,
+      limite: REGLAS.MAX_CANDIDATOS,
+    }),
+  );
+
+  const resultados = [];
+  for (const f of filas) {
+    const ev = evaluarRuta(f.polilinea, recogida, bajada);
+    if (ev.compatible) resultados.push(aResultado(f, ev, salidaEn));
+  }
+  resultados.sort(
+    (a, b) =>
+      a.distancia_pie_m - b.distancia_pie_m ||
+      Math.abs(new Date(a.salida_en) - salidaEn) - Math.abs(new Date(b.salida_en) - salidaEn) ||
+      a.viaje_id - b.viaje_id,
+  );
+
+  return {
+    resultados: resultados.slice(0, limite),
+    criterios: {
+      salida_deseada: salidaEn,
+      ventana_min: REGLAS.VENTANA_HORA_MIN,
+      max_distancia_pie_m: REGLAS.MAX_DISTANCIA_PIE_M,
+    },
+  };
 }
 
 // ---------- Cancelar (RF-11) ----------
@@ -205,7 +290,7 @@ async function detalle(tenant, usuarioId, idParam) {
 function mensajeCancelacion(viaje, motivo) {
   const destino = viaje.destino_texto ? ` hacia ${viaje.destino_texto}` : '';
   const porque = motivo ? ` Motivo: ${motivo}` : '';
-  return `${viaje.conductor_nombre} canceló el viaje del ${formatoFecha.format(viaje.salida_en)}${destino}.${porque}`;
+  return `${viaje.conductor_nombre} canceló el viaje del ${fechaHoraLegible(viaje.salida_en)}${destino}.${porque}`;
 }
 
 // En UNA transacción: el viaje pasa a cancelado, sus reservas vigentes se cancelan y cada
@@ -247,8 +332,18 @@ async function cancelar(tenant, conductorId, idParam, body = {}) {
   });
 }
 
+// ---------- Cierre automático (RF-20) ----------
+
+// La llama el job de src/jobs/cierreAutomatico.js para cada institución.
+function cerrarVencidos(tenant, margenMin = MARGEN_CIERRE_MIN) {
+  return withTenant(tenant.schema, (db) => repo.cerrarVencidos(db, margenMin));
+}
+
 module.exports = {
+  MARGEN_CIERRE_MIN,
+  cerrarVencidos,
   publicar,
+  buscar,
   republicar,
   misViajes,
   detalle,

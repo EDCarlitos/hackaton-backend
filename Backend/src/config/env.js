@@ -11,6 +11,14 @@ function required(name, { minLength = 1 } = {}) {
 
 const nodeEnv = process.env.NODE_ENV || 'development';
 
+function leerEnteroNoNegativo(name, defecto) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === '') return defecto;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0) throw new Error(`${name} debe ser un entero >= 0`);
+  return n;
+}
+
 // Proveedor de rutas: "google" (Routes API) o "simulado" (línea quebrada + haversine, sin red).
 // Sin MAPS_PROVIDER: google si hay API key; si no, simulado (prohibido en producción).
 function leerMapas() {
@@ -57,6 +65,13 @@ const env = {
   platformAdminKey: required('PLATFORM_ADMIN_KEY', { minLength: 24 }),
   mapas: leerMapas(),
   zonaHoraria: leerZonaHoraria(),
+  // RF-20: cada cuántos segundos corre el cierre automático de viajes (0 = desactivado).
+  cierreIntervaloSeg: leerEnteroNoNegativo('CIERRE_INTERVALO_SEG', 60),
+  // Orígenes del frontend permitidos por CORS, separados por coma (en dev se usa el proxy de Vite).
+  corsOrigins: (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
 };
 
 module.exports = env;

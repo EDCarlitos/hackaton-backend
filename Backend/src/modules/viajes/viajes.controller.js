@@ -10,6 +10,11 @@ async function misViajes(req, res) {
   res.json({ viajes });
 }
 
+async function buscar(req, res) {
+  const resultado = await service.buscar(req.tenant, req.auth.usuarioId, req.query);
+  res.json(resultado);
+}
+
 async function detalle(req, res) {
   const viaje = await service.detalle(req.tenant, req.auth.usuarioId, req.params.id);
   res.json({ viaje });
@@ -25,4 +30,4 @@ async function cancelar(req, res) {
   res.json(resultado);
 }
 
-module.exports = { publicar, misViajes, detalle, republicar, cancelar };
+module.exports = { publicar, misViajes, buscar, detalle, republicar, cancelar };

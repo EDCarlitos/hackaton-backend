@@ -18,7 +18,7 @@ API en Node.js + Express 5 (CommonJS) con PostgreSQL 16 (`pg`). Postgres corre c
 - Los seeds deben ser idempotentes (`ON CONFLICT DO NOTHING`), porque corren en cada arranque en dev.
 - Seeds de `public`: `src/db/seeds/*.sql`, van antes de los tenants porque pueden dar de alta instituciones.
 - Seeds de tenant: `src/db/seeds/tenant/<schema>/*.sql`, van después de migrar los tenants, cada archivo en su transacción y con `search_path = <schema>, public`. Si el schema no es una institución, la carpeta se ignora.
-- Datos demo: `seeds/tenant/ucaribe/001_demo_viajes.sql` (un bloque `DO` que no hace nada si ya existe `ana.conductora@ucaribe.edu.mx`). Contraseña de todos: `secreta123`. Trae conductores, pasajeros, vehículos, plantillas, viajes en todos los estados, reservas, mensajes y un aviso sin leer. Las fechas son relativas al **primer** arranque; para regenerarlas, recrea la BD.
+- Datos demo: `seeds/tenant/ucaribe/001_demo_viajes.sql` (un bloque `DO` que no hace nada si ya existe `ana.conductora@ucaribe.edu.mx`). Contraseña de todos: `secreta123`. Trae conductores, pasajeros, vehículos, plantillas, viajes en todos los estados, reservas, mensajes y un aviso sin leer. `002_demo_busqueda.sql` (guarda: `carla.conductora@`) agrega 3 conductores con viajes mañana temprano, a `valeria.pasajera@` (sin reservas, para hacer el flujo completo de la demo) y 10 días de historial completado para el impacto. Su cabecera trae una búsqueda de ejemplo con el orden esperado, y `tests/seeds.demo.test.js` lo verifica. Las fechas son relativas al **primer** arranque; para regenerarlas, recrea la BD.
 - Los enums (`rol_usuario`, `estado_viaje`, `estado_reserva`) y la extensión `citext` viven en `public`. Los schemas de tenant los usan porque `public` va en el `search_path`.
 
 ## Arquitectura: modular (por funcionalidad)
@@ -28,15 +28,17 @@ Cada funcionalidad vive en su propia carpeta dentro de `src/modules/`. **No** us
 ```
 src/
 ├── app.js                  # crea la app Express, middlewares globales, monta rutas
-├── server.js               # arranque: prueba la BD y hace listen
+├── server.js               # arranque: prueba la BD, hace listen e inicia el cierre automático
+├── jobs/
+│   └── cierreAutomatico.js # RF-20: cierra viajes vencidos de todas las instituciones cada CIERRE_INTERVALO_SEG
 ├── config/
 │   ├── env.js              # lee/valida variables de entorno
 │   └── db.js               # Pool de pg + helper withTenant
 ├── shared/
 │   ├── constants/          # roles, estados de viaje/reserva, tipos de notificación
-│   ├── middlewares/        # tenant, errorHandler, auth, validación
+│   ├── middlewares/        # errorHandler, auth, adminKey, cors
 │   ├── maps/               # cálculo de rutas: Google Routes API o simulado (ver Google Maps)
-│   └── utils/              # jwt, geo (polilíneas, haversine), validacion, formato
+│   └── utils/              # jwt, geo (polilíneas, haversine, proyección a la ruta), emparejamiento (reglas sección 5), validacion, formato
 ├── docs/
 │   └── openapi.js          # spec OpenAPI; se sirve en /docs (Swagger UI) y /docs.json
 ├── db/
@@ -59,7 +61,8 @@ Reglas:
 - Al agregar o cambiar un endpoint, actualiza su contrato en `src/docs/openapi.js`.
 - Archivos con el formato `<modulo>.<capa>.js`. Nombres de módulo en plural y en minúsculas (`users`, `projects`).
 - Si otro módulo necesita trabajar **en la misma transacción**, el service expone una función que recibe `db` (ej. `vehiculos.resolverParaPublicar(db, ...)`, `viajes.guardarEnTransaccion(db, ...)`, `notificaciones.crearEnTransaccion(db, ...)`). Esas funciones no abren `withTenant`.
-- Módulos: `auth`, `instituciones`, `vehiculos`, `viajes`, `trayectos` y `notificaciones`. Dependencias entre services: `trayectos → viajes → vehiculos, notificaciones`. No debe haber ciclos.
+- Módulos: `auth`, `instituciones`, `vehiculos`, `viajes`, `trayectos`, `reservas`, `mensajes`, `impacto` y `notificaciones`. Dependencias entre services: `trayectos → viajes → vehiculos, notificaciones` y `reservas → notificaciones`. El job `cierreAutomatico` usa `instituciones` y `viajes`. No debe haber ciclos.
+- `mensajes` se monta en `/viajes/:viajeId/mensajes`, con `Router({ mergeParams: true })` y **antes** de `/viajes` en `app.js`.
 
 ## Multi-tenant: un schema por tenant
 
@@ -116,6 +119,43 @@ Reglas:
 - Solo el conductor del viaje republica o cancela (403 `NO_ES_CONDUCTOR`). Solo se cancela un viaje en `abierto`/`lleno` (409 `VIAJE_NO_CANCELABLE`).
 - Las plantillas son privadas: la de otro da 404 `TRAYECTO_NO_ENCONTRADO`.
 
+## Pasajero: buscar y solicitar (RF-12 a RF-15)
+
+| RF | Endpoint |
+|---|---|
+| 12–14 | `GET /viajes/buscar?recogida_lat=&recogida_lng=&bajada_lat?=&bajada_lng?=&salida_en?=&limite?=`: cada resultado trae `salida_en`, `asientos_disponibles`, `distancia_pie_m`, `costo_referencia`, `punto_abordaje`, `diferencia_min`, la ruta, el conductor y `mi_reserva` |
+| 15 | `POST /reservas` `{ viaje_id, recogida, bajada? }`: crea una solicitud (un asiento). `POST /reservas/:id/cancelar`. `GET /reservas/mias?cuando=proximas\|pasadas\|todas` |
+
+- **Reglas de compatibilidad (sección 5):** viven en un solo lugar, `shared/utils/emparejamiento.js` (`REGLAS`, `esReservable`, `evaluarRuta`). La búsqueda y `POST /reservas` usan las mismas, así que lo que aparece en la búsqueda también se puede solicitar. Las reglas son:
+  - Son las de la **sección 5** de `Frontend/AGENTS.MD`. El viaje acepta solicitudes: `abierto` y `salida_en > now()`, o `en_curso` con `reservas_cierran_en > now()`.
+  - Tiene `asientos_disponibles > 0` (RF-19) y no es del propio usuario.
+  - Sale dentro de ±`VENTANA_HORA_MIN` (**15**) de la hora deseada.
+  - La ruta pasa a **menos** de `MAX_DISTANCIA_PIE_M` (R = **400 m**, valor inicial que se ajusta probando en Cancún) de la recogida, y de la bajada si se manda. Además, la recogida queda **antes** que la bajada en el sentido del viaje.
+- **Orden de la búsqueda:** `distancia_pie_m` (redondeada a metros) y luego `|salida_en − hora deseada|`. El SQL (`viajes.repository.listarCandidatos`) filtra estado, asientos, ventana y conductor, y devuelve como máximo `MAX_CANDIDATOS` viajes, los más cercanos en hora. La distancia a la ruta se calcula en JS con la polilínea guardada (`geo.proyectarEnRuta`), **sin llamar a Google**. Si cambias el filtro de estado, cambia también `esReservable`.
+- La distancia a pie se mide **en línea recta** al tramo más cercano de la ruta, no por calles.
+- **Asientos:** una solicitud no descuenta asientos; el asiento se descuenta cuando el conductor confirma. Si el pasajero cancela una reserva **confirmada**, se devuelve el asiento y un viaje `lleno` vuelve a `abierto`, todo en la misma transacción.
+- **Orden de bloqueo** al tocar reservas: primero el viaje (`FOR UPDATE`) y después la reserva, el mismo orden que usa `viajes.cancelar`, para evitar deadlocks.
+- **Errores:** `ES_TU_VIAJE`, `VIAJE_LLENO`, `VIAJE_NO_DISPONIBLE` y `RESERVA_DUPLICADA` (409; la última también sale del índice `ux_reserva_activa` cuando hay carrera); `FUERA_DE_RUTA` y `SENTIDO_CONTRARIO` (400, con detalle por campo); `RESERVA_NO_CANCELABLE` (409, el viaje ya salió o la reserva no está vigente).
+- **Avisos al conductor:** `reserva_solicitada` cuando llega una solicitud y `reserva_cancelada` cuando el pasajero cancela.
+
+## Reservas, chat e impacto (RF-16 a RF-24)
+
+| RF | Endpoint / mecanismo |
+|---|---|
+| 16 | `POST /reservas/:id/aceptar` y `POST /reservas/:id/rechazar`. Solo el conductor del viaje; para cualquier otro es 404 `RESERVA_NO_ENCONTRADA`. Si la reserva no está `solicitada`, 409 `RESERVA_NO_PENDIENTE` |
+| 17 | Aceptar → `confirmada` + `asientos_disponibles - 1` en la misma transacción, con el viaje bloqueado. Última barrera: el trigger `trg_reservas_cupo` (migración 009) lanza `23514 chk_cupo_confirmadas` si habría más confirmadas que `asientos_ofrecidos`; el service lo traduce a 409 `VIAJE_LLENO` |
+| 18 | `GET /reservas/:id` (pasajero o conductor; trae `soy`). Las reservas del conductor (`/viajes/mios`, `/viajes/:id`) y `mi_reserva` del pasajero traen `punto_abordaje` = punto de la ruta más cercano a la recogida (`emparejamiento.puntoDeAbordaje`) |
+| 19 | La búsqueda exige `asientos_disponibles > 0` |
+| 20 | `viajes.cerrarVencidos(tenant)`: con `salida_en + MARGEN_CIERRE_MIN` (60) vencido, el viaje pasa a `finalizado`, las `confirmada` a `completada` y las `solicitada` a `expirada`. Además, las solicitudes de viajes que ya salieron expiran aunque el viaje no se haya cerrado. Lo corre `jobs/cierreAutomatico.js` cada `CIERRE_INTERVALO_SEG` (0 lo apaga; en tests es 0) |
+| 21 | Si al aceptar el viaje llega a 0 asientos, pasa a `lleno` y las demás `solicitada` se rechazan solas, con aviso `reserva_rechazada` |
+| 22 | Al solicitar: si el pasajero ya tiene una reserva vigente en un viaje que se cruza en `[salida_en, salida_en + duracion_min]` → 409 `RESERVA_TRASLAPADA`. Se serializa con `FOR NO KEY UPDATE` sobre el pasajero |
+| 23 (chat) | `GET /viajes/:viajeId/mensajes?despues_de=` (polling) y `POST` `{ texto }`. Leen el conductor y los pasajeros confirmados o completados; escriben el conductor y los confirmados si el viaje no está cancelado ni finalizado (409 `CHAT_CERRADO`). A otros, 403 `NO_PARTICIPA` |
+| 23–24 (impacto) | `GET /impacto` → `{ institucion, mio, metodologia }`. Cuenta solo reservas `completada`. CO₂ = km compartidos × 0.249 kg/km (EPA: 400 g/milla). La metodología (fórmula, factor, fuente, supuestos, etiqueta "Estimación") vive en `impacto.service.js` y el frontend la muestra tal cual |
+
+- Orden de bloqueo en aceptar/rechazar/cancelar: viaje y después reserva (ver arriba).
+- Avisos al pasajero: `reserva_confirmada` y `reserva_rechazada`.
+- CORS: `CORS_ORIGINS` (lista separada por comas) para el frontend desplegado; en dev no hace falta porque Vite usa un proxy (`/api` → `localhost:3000`).
+
 ## Autenticación y autorización (módulo `auth`)
 
 - JWT HS256 firmado con `JWT_SECRET`, con expiración `JWT_EXPIRES_IN`. Payload: `sub` = id del usuario, `institucion_id`, `rol`. Helpers en `shared/utils/jwt.js`.
@@ -155,7 +195,8 @@ Reglas:
 
 - `npm test` usa `node:test` + `supertest` y corre los tests de integración contra Postgres real.
 - `.env.test` (commiteado, sin secretos reales) se carga después de `.env` y cambia `POSTGRES_DB=hackaton_test`. El `pretest` (`tests/setup-db.js`) **borra y recrea** esa base en cada corrida, y aborta si el nombre no termina en `_test`.
-- Archivos: `tests/<modulo>.<tema>.test.js`, con helpers comunes en `tests/helpers.js` (`crearUsuario`, `crearConductor`, `publicarViaje`, `crearReserva`, `enHoras`, `auth`). Cada archivo que usa la BD hace `before(prepararBD)` y `after(cerrarBD)`. `mapas.test.js` es unitario: simula `fetch` y no toca la BD.
+- Archivos: `tests/<modulo>.<tema>.test.js`, con helpers comunes en `tests/helpers.js` (`crearUsuario`, `crearConductor`, `publicarViaje`, `crearReserva`, `enHoras`, `auth`). Cada archivo que usa la BD hace `before(prepararBD)` y `after(cerrarBD)`. `mapas.test.js` y `emparejamiento.test.js` son unitarios y no tocan la BD.
+- Búsquedas: los viajes de otros archivos siguen en la BD. Usa `zonaDePrueba()` (cada llamada es una zona aislada a ~11 km, con puntos `cerca`, `lejos`, `cercaDelInicio` y `cercaDelDestino`) y `publicarEnZona(conductor, zona, extra)`.
 - Para verificar cuántas veces se consulta Google: `const espia = mock.method(mapas, 'calcularRuta')`, luego `espia.mock.callCount()`, y `afterEach(() => mock.restoreAll())`. Para simular una falla, pásale una implementación que lance.
 - Cada test usa datos únicos (`unico()`) para no depender del orden. Los archivos corren en serie (`--test-concurrency=1`).
 - Además del status HTTP, verificar `error.codigo` y el efecto real en la BD (fila creada en el schema correcto, nada creado en los casos de error).

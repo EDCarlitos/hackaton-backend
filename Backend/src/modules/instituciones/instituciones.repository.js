@@ -40,4 +40,9 @@ async function findActivaPorId(db, id) {
   return rows[0] || null;
 }
 
-module.exports = { insertInstitucion, insertDominios, findActivaPorDominio, findActivaPorId };
+async function listarActivas(db) {
+  const { rows } = await db.query('SELECT id, schema_nombre FROM public.instituciones WHERE activo ORDER BY id');
+  return rows;
+}
+
+module.exports = { insertInstitucion, insertDominios, findActivaPorDominio, findActivaPorId, listarActivas };

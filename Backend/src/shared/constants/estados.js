@@ -18,7 +18,11 @@ const ESTADOS_RESERVA = Object.freeze({
 
 // Columna notificaciones.tipo (varchar): el frontend decide ícono/acción según el tipo.
 const TIPOS_NOTIFICACION = Object.freeze({
-  VIAJE_CANCELADO: 'viaje_cancelado',
+  VIAJE_CANCELADO: 'viaje_cancelado', // al pasajero
+  RESERVA_SOLICITADA: 'reserva_solicitada', // al conductor: nueva solicitud entrante
+  RESERVA_CANCELADA: 'reserva_cancelada', // al conductor: el pasajero canceló
+  RESERVA_CONFIRMADA: 'reserva_confirmada', // al pasajero: el conductor aceptó
+  RESERVA_RECHAZADA: 'reserva_rechazada', // al pasajero: el conductor rechazó o el viaje se llenó
 });
 
 module.exports = { ESTADOS_VIAJE, ESTADOS_RESERVA, TIPOS_NOTIFICACION };

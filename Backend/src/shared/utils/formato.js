@@ -1,3 +1,5 @@
+const env = require('../../config/env');
+
 // Conversión de filas de pg a la forma que ve el frontend.
 // Las columnas numeric llegan como string: aquí se pasan a number.
 
@@ -14,4 +16,16 @@ const aRuta = (fila) => ({
 // time de pg llega como "07:30:00"; se expone como "07:30".
 const aHora = (t) => (t ? t.slice(0, 5) : null);
 
-module.exports = { aNumero, aPunto, aRuta, aHora };
+// "sábado, 21 de noviembre, 07:00" en APP_TIMEZONE (para textos de notificaciones).
+const formatoFechaHora = new Intl.DateTimeFormat('es-MX', {
+  timeZone: env.zonaHoraria,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+});
+const fechaHoraLegible = (fecha) => formatoFechaHora.format(new Date(fecha));
+
+module.exports = { aNumero, aPunto, aRuta, aHora, fechaHoraLegible };

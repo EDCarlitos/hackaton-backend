@@ -7,6 +7,7 @@ const router = Router();
 router.use(requireAuth);
 router.post('/', controller.publicar);
 router.get('/mios', controller.misViajes); // antes de /:id
+router.get('/buscar', controller.buscar); // antes de /:id
 router.get('/:id', controller.detalle);
 router.post('/:id/republicar', controller.republicar);
 router.post('/:id/cancelar', controller.cancelar);

@@ -1,6 +1,7 @@
 const env = require('./config/env');
 const app = require('./app');
 const { setupDatabase } = require('./db/migrate');
+const { iniciarCierreAutomatico } = require('./jobs/cierreAutomatico');
 
 async function start() {
   try {
@@ -13,6 +14,7 @@ async function start() {
   app.listen(env.port, () => {
     console.log(`Servidor escuchando en http://localhost:${env.port}`);
   });
+  iniciarCierreAutomatico(env.cierreIntervaloSeg);
 }
 
 start();

@@ -68,4 +68,8 @@ function findActivaPorId(id) {
   return repo.findActivaPorId(pool, id);
 }
 
-module.exports = { crear, findActivaPorDominio, findActivaPorId };
+function listarActivas() {
+  return repo.listarActivas(pool);
+}
+
+module.exports = { crear, findActivaPorDominio, findActivaPorId, listarActivas };
