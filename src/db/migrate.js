@@ -5,6 +5,7 @@ const { pool, quoteSchema } = require('../config/db');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const TENANT_DIR = path.join(__dirname, 'tenant');
 const SEEDS_DIR = path.join(__dirname, 'seeds');
+const TENANT_SEEDS_DIR = path.join(SEEDS_DIR, 'tenant'); // una carpeta por schema: seeds/tenant/<schema>/*.sql
 const LOCK_ID = 727001; // evita que dos procesos migren al mismo tiempo
 
 async function sqlFiles(dir) {
@@ -103,7 +104,7 @@ async function createTenantSchema(client, schemaNombre) {
   await client.query('SET LOCAL search_path TO public');
 }
 
-// Corre todos los seeds. Deben ser idempotentes (ON CONFLICT DO NOTHING).
+// Corre los seeds de public (src/db/seeds/*.sql). Deben ser idempotentes (ON CONFLICT DO NOTHING).
 async function seed() {
   for (const file of await sqlFiles(SEEDS_DIR)) {
     const sql = await fs.readFile(path.join(SEEDS_DIR, file), 'utf8');
@@ -112,22 +113,55 @@ async function seed() {
   }
 }
 
-// Orden completo: public → seeds (opcional) → schemas de institución.
-// Los seeds van antes de los tenants porque pueden dar de alta instituciones.
+// Corre src/db/seeds/tenant/<schema>/*.sql sobre cada schema que ya sea institución
+// (las carpetas de schemas que no existen se ignoran). Cada archivo va en su transacción
+// con search_path = <schema>, public. También deben ser idempotentes.
+async function seedTenants() {
+  const carpetas = await fs.readdir(TENANT_SEEDS_DIR, { withFileTypes: true }).catch(() => []);
+  const { rows } = await pool.query('SELECT schema_nombre FROM public.instituciones');
+  const existentes = new Set(rows.map((r) => r.schema_nombre));
+
+  for (const carpeta of carpetas) {
+    if (!carpeta.isDirectory() || !existentes.has(carpeta.name)) continue;
+    const dir = path.join(TENANT_SEEDS_DIR, carpeta.name);
+    const searchPath = `${quoteSchema(carpeta.name)}, public`;
+    for (const file of await sqlFiles(dir)) {
+      const sql = await fs.readFile(path.join(dir, file), 'utf8');
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await client.query(`SET LOCAL search_path TO ${searchPath}`);
+        await client.query(sql);
+        await client.query('COMMIT');
+        console.log(`Seed aplicado [${carpeta.name}]: ${file}`);
+      } catch (err) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw new Error(`Falló el seed ${file} en ${carpeta.name}: ${err.message}`);
+      } finally {
+        client.release();
+      }
+    }
+  }
+}
+
+// Orden completo: public → seeds de public (opcional) → schemas de institución → seeds de tenant (opcional).
+// Los seeds de public van antes de los tenants porque pueden dar de alta instituciones;
+// los de tenant van al final porque necesitan sus tablas.
 async function setupDatabase({ withSeeds }) {
   await migratePublic();
   if (withSeeds) await seed();
   await migrateTenants();
+  if (withSeeds) await seedTenants();
 }
 
-module.exports = { migratePublic, migrateTenants, createTenantSchema, seed, setupDatabase };
+module.exports = { migratePublic, migrateTenants, createTenantSchema, seed, seedTenants, setupDatabase };
 
 // Uso por CLI: node src/db/migrate.js [migrate|seed|setup]
 if (require.main === module) {
   const cmd = process.argv[2] || 'migrate';
   const tasks = {
     migrate: () => setupDatabase({ withSeeds: false }),
-    seed: () => seed().then(migrateTenants),
+    seed: () => seed().then(migrateTenants).then(seedTenants),
     setup: () => setupDatabase({ withSeeds: true }),
   };
   if (!tasks[cmd]) {

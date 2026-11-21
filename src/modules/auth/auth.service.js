@@ -106,12 +106,9 @@ async function login(body) {
   const passwordOk = await bcrypt.compare(password, usuario ? usuario.password_hash : HASH_RELLENO);
   if (!usuario || !passwordOk) throw credencialesInvalidas();
 
-  // Solo con la contraseña correcta se informa el estado de la cuenta.
+  // Solo con la contraseña correcta se informa que la cuenta está desactivada.
   if (!usuario.activo) {
     throw new ForbiddenError('La cuenta está desactivada', { code: 'USUARIO_INACTIVO' });
-  }
-  if (!usuario.correo_verificado_en) {
-    throw new ForbiddenError('Debes verificar tu correo antes de iniciar sesión', { code: 'CORREO_NO_VERIFICADO' });
   }
 
   return { usuario: sinPassword(usuario), token: emitirToken(usuario, institucion) };

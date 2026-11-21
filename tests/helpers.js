@@ -33,9 +33,9 @@ async function schemaExiste(nombre) {
 
 const PASSWORD = 'secreta123';
 
-// Registra un usuario en ucaribe y le ajusta estado/rol directo en la BD.
+// Registra un usuario en ucaribe y le ajusta activo/rol directo en la BD.
 // Devuelve { correo, password, usuario, token }.
-async function crearUsuario({ verificado = true, activo = true, rol = 'usuario' } = {}) {
+async function crearUsuario({ activo = true, rol = 'usuario' } = {}) {
   const correo = `u_${unico()}@ucaribe.edu.mx`;
   const { body } = await api()
     .post('/auth/register')
@@ -43,11 +43,69 @@ async function crearUsuario({ verificado = true, activo = true, rol = 'usuario' 
     .expect(201);
   await pool.query(
     `UPDATE ucaribe.usuarios
-        SET correo_verificado_en = CASE WHEN $2 THEN now() END, activo = $3, rol = $4
+        SET activo = $2, rol = $3
       WHERE id = $1`,
-    [body.usuario.id, verificado, activo, rol],
+    [body.usuario.id, activo, rol],
   );
   return { correo, password: PASSWORD, usuario: body.usuario, token: body.token };
 }
 
-module.exports = { api, pool, prepararBD, cerrarBD, crearInstitucion, crearUsuario, unico, schemaExiste };
+const auth = (token) => ({ Authorization: `Bearer ${token}` });
+
+// Usuario de ucaribe con un vehículo registrado por la API. Devuelve { ...crearUsuario(), vehiculo }.
+async function crearConductor({ asientos = 4 } = {}) {
+  const u = await crearUsuario();
+  const { body } = await api()
+    .post('/vehiculos')
+    .set(auth(u.token))
+    .send({ placa_o_descripcion: 'Auto de prueba', asientos })
+    .expect(201);
+  return { ...u, vehiculo: body.vehiculo };
+}
+
+// Fecha ISO (con Z) a `horas` de ahora.
+const enHoras = (horas) => new Date(Date.now() + horas * 3_600_000).toISOString();
+
+const ORIGEN = { lat: 21.1826, lng: -86.8678, texto: 'Villas Otoch' };
+const DESTINO = { lat: 21.2004, lng: -86.8226, texto: 'Universidad del Caribe' };
+
+const datosViaje = (extra = {}) => ({
+  origen: ORIGEN,
+  destino: DESTINO,
+  salida_en: enHoras(24),
+  asientos_ofrecidos: 3,
+  ...extra,
+});
+
+function publicarViaje(token, extra) {
+  return api().post('/viajes').set(auth(token)).send(datosViaje(extra));
+}
+
+// Reserva insertada directo en la BD (el módulo de reservas es de otro requisito).
+async function crearReserva(viajeId, pasajeroId, estado = 'solicitada') {
+  const { rows } = await pool.query(
+    `INSERT INTO ucaribe.reservas (viaje_id, pasajero_id, recogida_lat, recogida_lng, recogida_texto, estado)
+     VALUES ($1, $2, 21.18, -86.85, 'Parada de prueba', $3) RETURNING *`,
+    [viajeId, pasajeroId, estado],
+  );
+  return rows[0];
+}
+
+module.exports = {
+  api,
+  pool,
+  prepararBD,
+  cerrarBD,
+  crearInstitucion,
+  crearUsuario,
+  crearConductor,
+  crearReserva,
+  publicarViaje,
+  datosViaje,
+  enHoras,
+  auth,
+  ORIGEN,
+  DESTINO,
+  unico,
+  schemaExiste,
+};

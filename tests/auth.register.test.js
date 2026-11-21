@@ -69,7 +69,6 @@ describe('POST /auth/register', () => {
       assert.equal(res.status, 201);
       assert.equal(res.body.usuario.correo, correo);
       assert.equal(res.body.usuario.rol, 'usuario');
-      assert.equal(res.body.usuario.correo_verificado_en, null);
       assert.ok(res.body.usuario.acepto_terminos_en);
       assert.equal(res.body.usuario.password_hash, undefined, 'nunca devolver el hash');
 

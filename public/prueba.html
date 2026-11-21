@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RutaCaribe · Prueba de auth</title>
+  <style>
+    :root {
+      --bg: #f4f6f8; --card: #ffffff; --text: #1d2733; --muted: #66727f; --border: #d9dee4;
+      --accent: #0f766e; --accent-text: #ffffff; --ok-bg: #e7f6ee; --ok: #17663d;
+      --err-bg: #fdecec; --err: #a12626; --code-bg: #f0f2f5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #12171d; --card: #1b222a; --text: #e5e9ee; --muted: #9aa5b1; --border: #2d3742;
+        --accent: #2dd4bf; --accent-text: #08201d; --ok-bg: #14301f; --ok: #7ddba3;
+        --err-bg: #3a1a1a; --err: #f29b9b; --code-bg: #141a20;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex; justify-content: center; padding: 32px 16px;
+    }
+    main { width: 100%; max-width: 440px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .tabs { display: flex; gap: 4px; background: var(--code-bg); border-radius: 8px; padding: 4px; margin-bottom: 18px; }
+    .tabs button {
+      flex: 1; border: 0; background: transparent; color: var(--muted); padding: 8px; border-radius: 6px;
+      font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .tabs button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
+    input[type=email], input[type=password], input[type=text] {
+      width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--text); font: inherit;
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .campo-error { color: var(--err); font-size: 12px; margin-top: 3px; min-height: 0; }
+    .check { display: flex; align-items: center; gap: 8px; font-weight: 400; margin-top: 14px; }
+    .primario {
+      width: 100%; margin-top: 18px; padding: 10px; border: 0; border-radius: 8px;
+      background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .primario:disabled { opacity: .6; cursor: wait; }
+    .secundario {
+      padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; background: transparent;
+      color: var(--text); font: inherit; font-size: 13px; cursor: pointer;
+    }
+    .aviso { margin-top: 16px; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+    .aviso.ok { background: var(--ok-bg); color: var(--ok); }
+    .aviso.err { background: var(--err-bg); color: var(--err); }
+    .aviso code { font-weight: 700; }
+    .sesion { margin-top: 16px; }
+    .sesion h2 { font-size: 15px; margin: 0 0 8px; }
+    .acciones { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    pre {
+      background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+      font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 0;
+    }
+    .pista { color: var(--muted); font-size: 12px; margin-top: 14px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>RutaCaribe · Prueba de auth</h1>
+  <p class="sub">Registro y login contra esta misma API.</p>
+
+  <div class="card">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" id="tab-login" aria-selected="true">Iniciar sesión</button>
+      <button type="button" role="tab" id="tab-registro" aria-selected="false">Registrarme</button>
+    </div>
+
+    <form id="form-login" novalidate>
+      <label for="login-correo">Correo institucional</label>
+      <input id="login-correo" name="correo" type="email" autocomplete="username" placeholder="ana@ucaribe.edu.mx" required>
+      <div class="campo-error" data-campo="correo"></div>
+
+      <label for="login-password">Contraseña</label>
+      <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      <div class="campo-error" data-campo="password"></div>
+
+      <button class="primario" type="submit">Entrar</button>
+    </form>
+
+    <form id="form-registro" novalidate hidden>
+      <label for="reg-nombre">Nombre visible</label>
+      <input id="reg-nombre" name="nombre_visible" type="text" maxlength="100" placeholder="Ana López" required>
+      <div class="campo-error" data-campo="nombre_visible"></div>
+
+      <label for="reg-correo">Correo institucional</label>
+      <input id="reg-correo" name="correo" type="email" autocomplete="username" placeholder="ana@ucaribe.edu.mx" required>
+      <div class="campo-error" data-campo="correo"></div>
+
+      <label for="reg-password">Contraseña (mínimo 8 caracteres)</label>
+      <input id="reg-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+      <div class="campo-error" data-campo="password"></div>
+
+      <label class="check"><input name="acepto_terminos" type="checkbox"> Acepto los términos</label>
+
+      <button class="primario" type="submit">Crear cuenta</button>
+    </form>
+
+    <div id="aviso" class="aviso" hidden></div>
+    <p class="pista">El dominio del correo decide la institución. En desarrollo está permitido <code>ucaribe.edu.mx</code>.</p>
+  </div>
+
+  <div id="sesion" class="card sesion" hidden>
+    <h2>Sesión activa</h2>
+    <div class="acciones">
+      <button class="secundario" type="button" id="btn-me">Probar GET /auth/me</button>
+      <button class="secundario" type="button" id="btn-salir">Cerrar sesión</button>
+    </div>
+    <pre id="salida"></pre>
+  </div>
+</main>
+
+<script>
+  const CLAVE_TOKEN = 'rutacaribe_token';
+  const $ = (id) => document.getElementById(id);
+
+  // localStorage puede fallar (modo privado, bloqueado): la página sigue funcionando sin él.
+  const almacen = {
+    leer() { try { return localStorage.getItem(CLAVE_TOKEN); } catch { return null; } },
+    guardar(t) { try { localStorage.setItem(CLAVE_TOKEN, t); } catch {} },
+    borrar() { try { localStorage.removeItem(CLAVE_TOKEN); } catch {} },
+  };
+  let token = almacen.leer();
+
+  // ---------- Pestañas ----------
+  function mostrarPestana(cual) {
+    const esLogin = cual === 'login';
+    $('tab-login').setAttribute('aria-selected', esLogin);
+    $('tab-registro').setAttribute('aria-selected', !esLogin);
+    $('form-login').hidden = !esLogin;
+    $('form-registro').hidden = esLogin;
+    ocultarAviso();
+  }
+  $('tab-login').onclick = () => mostrarPestana('login');
+  $('tab-registro').onclick = () => mostrarPestana('registro');
+
+  // ---------- Mensajes ----------
+  function mostrarAviso(tipo, html) {
+    const el = $('aviso');
+    el.className = `aviso ${tipo}`;
+    el.innerHTML = html;
+    el.hidden = false;
+  }
+  function ocultarAviso() { $('aviso').hidden = true; }
+  const escapar = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+  function limpiarErroresCampo(form) {
+    form.querySelectorAll('.campo-error').forEach((el) => (el.textContent = ''));
+  }
+  function mostrarErroresCampo(form, detalles = {}) {
+    for (const [campo, msg] of Object.entries(detalles)) {
+      const el = form.querySelector(`.campo-error[data-campo="${campo}"]`);
+      if (el) el.textContent = msg;
+    }
+  }
+
+  // ---------- API ----------
+  async function llamar(metodo, ruta, body) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(ruta, { method: metodo, headers, body: body ? JSON.stringify(body) : undefined });
+    const datos = await res.json().catch(() => ({}));
+    return { status: res.status, ok: res.ok, datos };
+  }
+
+  function mostrarError({ status, datos }) {
+    const e = datos.error || {};
+    mostrarAviso('err', `<code>${status} ${escapar(e.codigo || 'ERROR')}</code> — ${escapar(e.mensaje || 'Error desconocido')}`);
+  }
+
+  function iniciarSesion(nuevoToken, usuario, mensaje) {
+    token = nuevoToken;
+    almacen.guardar(token);
+    mostrarAviso('ok', mensaje);
+    pintarSesion({ usuario, token });
+  }
+
+  function pintarSesion(contenido) {
+    $('sesion').hidden = !token;
+    $('salida').textContent = JSON.stringify(contenido, null, 2);
+  }
+
+  async function enviar(form, ruta, cuerpo, alExito) {
+    const boton = form.querySelector('button[type=submit]');
+    limpiarErroresCampo(form);
+    ocultarAviso();
+    boton.disabled = true;
+    try {
+      const r = await llamar('POST', ruta, cuerpo);
+      if (r.ok) return alExito(r.datos);
+      mostrarErroresCampo(form, r.datos.error?.detalles);
+      mostrarError(r);
+    } catch {
+      mostrarAviso('err', 'No se pudo conectar con la API. ¿Está corriendo el servidor?');
+    } finally {
+      boton.disabled = false;
+    }
+  }
+
+  // ---------- Formularios ----------
+  $('form-login').onsubmit = (ev) => {
+    ev.preventDefault();
+    const f = ev.target;
+    enviar(f, '/auth/login', { correo: f.correo.value, password: f.password.value }, (d) =>
+      iniciarSesion(d.token, d.usuario, `Bienvenido, <strong>${escapar(d.usuario.nombre_visible)}</strong>.`),
+    );
+  };
+
+  $('form-registro').onsubmit = (ev) => {
+    ev.preventDefault();
+    const f = ev.target;
+    const cuerpo = {
+      nombre_visible: f.nombre_visible.value,
+      correo: f.correo.value,
+      password: f.password.value,
+      acepto_terminos: f.acepto_terminos.checked,
+    };
+    enviar(f, '/auth/register', cuerpo, (d) =>
+      iniciarSesion(d.token, d.usuario, `Cuenta creada para <strong>${escapar(d.usuario.correo)}</strong>. Ya tienes sesión.`),
+    );
+  };
+
+  // ---------- Sesión ----------
+  $('btn-me').onclick = async () => {
+    try {
+      const r = await llamar('GET', '/auth/me');
+      if (r.ok) {
+        mostrarAviso('ok', '<code>200</code> — el token es válido.');
+        pintarSesion(r.datos);
+      } else {
+        mostrarError(r);
+        if (r.status === 401) cerrarSesion(false);
+      }
+    } catch {
+      mostrarAviso('err', 'No se pudo conectar con la API.');
+    }
+  };
+
+  function cerrarSesion(avisar = true) {
+    token = null;
+    almacen.borrar();
+    $('sesion').hidden = true;
+    if (avisar) mostrarAviso('ok', 'Sesión cerrada.');
+  }
+  $('btn-salir').onclick = () => cerrarSesion();
+
+  if (token) pintarSesion({ token });
+</script>
+</body>
+</html>

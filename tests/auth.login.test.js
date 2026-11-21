@@ -82,12 +82,15 @@ describe('POST /auth/login', () => {
   });
 
   describe('estado de la cuenta (solo con la contraseña correcta)', () => {
-    it('403 CORREO_NO_VERIFICADO si el correo no está verificado', async () => {
-      const { correo, password } = await crearUsuario({ verificado: false });
-      const res = await login({ correo, password });
-      assert.equal(res.status, 403);
-      assert.equal(res.body.error.codigo, 'CORREO_NO_VERIFICADO');
-      assert.equal(res.body.token, undefined);
+    it('un usuario recién registrado puede iniciar sesión de inmediato', async () => {
+      const correo = `nuevo_${unico()}@ucaribe.edu.mx`;
+      await api()
+        .post('/auth/register')
+        .send({ correo, password: 'secreta123', nombre_visible: 'Nuevo' })
+        .expect(201);
+      const res = await login({ correo, password: 'secreta123' });
+      assert.equal(res.status, 200);
+      assert.ok(res.body.token);
     });
 
     it('403 USUARIO_INACTIVO si la cuenta está desactivada', async () => {
@@ -95,10 +98,11 @@ describe('POST /auth/login', () => {
       const res = await login({ correo, password });
       assert.equal(res.status, 403);
       assert.equal(res.body.error.codigo, 'USUARIO_INACTIVO');
+      assert.equal(res.body.token, undefined);
     });
 
-    it('con contraseña incorrecta NO revela que está inactiva o sin verificar', async () => {
-      const { correo } = await crearUsuario({ activo: false, verificado: false });
+    it('con contraseña incorrecta NO revela que está desactivada', async () => {
+      const { correo } = await crearUsuario({ activo: false });
       const res = await login({ correo, password: 'incorrecta1' });
       assert.equal(res.status, 401);
       assert.equal(res.body.error.codigo, 'CREDENCIALES_INVALIDAS');

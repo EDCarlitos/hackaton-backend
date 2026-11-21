@@ -1,6 +1,6 @@
 // Solo SQL sobre tablas del tenant. `db` es el cliente que entrega withTenant.
 
-const COLUMNAS_PUBLICAS = `id, correo, nombre_visible, rol, correo_verificado_en, acepto_terminos_en, activo, creado_en`;
+const COLUMNAS_PUBLICAS = `id, correo, nombre_visible, rol, acepto_terminos_en, activo, creado_en`;
 
 async function createUsuario(db, { correo, passwordHash, nombreVisible, aceptoTerminos }) {
   const { rows } = await db.query(

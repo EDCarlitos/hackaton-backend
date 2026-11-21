@@ -1,5 +1,7 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { api, pool, prepararBD, cerrarBD, crearInstitucion, unico, schemaExiste } = require('./helpers');
 
 before(prepararBD);
@@ -20,7 +22,7 @@ describe('POST /instituciones', () => {
     assert.equal(res.status, 401);
   });
 
-  it('crea la institución, sus dominios y su schema con la tabla usuarios', async () => {
+  it('crea la institución, sus dominios y su schema con las tablas del tenant', async () => {
     const schema = `uni_${unico()}`;
     const dominio = `${schema.replaceAll('_', '')}.edu.mx`;
 
@@ -35,15 +37,19 @@ describe('POST /instituciones', () => {
     const inst = await pool.query('SELECT * FROM public.instituciones WHERE schema_nombre = $1', [schema]);
     assert.equal(inst.rowCount, 1);
 
-    // Schema creado, con la tabla usuarios y las migraciones de tenant registradas
+    // Schema creado, con las tablas del tenant y las migraciones registradas
     assert.equal(await schemaExiste(schema), true);
     const tablas = await pool.query(
       'SELECT table_name FROM information_schema.tables WHERE table_schema = $1 ORDER BY table_name',
       [schema],
     );
-    assert.deepEqual(tablas.rows.map((r) => r.table_name), ['schema_migrations', 'usuarios']);
-    const migs = await pool.query(`SELECT nombre FROM "${schema}".schema_migrations`);
-    assert.deepEqual(migs.rows.map((r) => r.nombre), ['001_usuarios.sql']);
+    assert.deepEqual(
+      tablas.rows.map((r) => r.table_name),
+      ['mensajes', 'notificaciones', 'reservas', 'schema_migrations', 'trayectos', 'usuarios', 'vehiculos', 'viajes'],
+    );
+    const migs = await pool.query(`SELECT nombre FROM "${schema}".schema_migrations ORDER BY nombre`);
+    const esperadas = fs.readdirSync(path.join(__dirname, '../src/db/tenant')).filter((f) => f.endsWith('.sql')).sort();
+    assert.deepEqual(migs.rows.map((r) => r.nombre), esperadas);
   });
 
   it('permite crear sin dominios', async () => {

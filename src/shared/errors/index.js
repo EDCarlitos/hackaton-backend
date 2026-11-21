@@ -50,6 +50,13 @@ class ConflictError extends AppError {
   }
 }
 
+// Falla un servicio externo del que depende la respuesta (ej. Google Maps).
+class BadGatewayError extends AppError {
+  constructor(message = 'Un servicio externo no respondió', opts = {}) {
+    super(message, { status: 502, code: 'SERVICIO_EXTERNO', ...opts });
+  }
+}
+
 module.exports = {
   AppError,
   ValidationError,
@@ -57,4 +64,5 @@ module.exports = {
   ForbiddenError,
   NotFoundError,
   ConflictError,
+  BadGatewayError,
 };
