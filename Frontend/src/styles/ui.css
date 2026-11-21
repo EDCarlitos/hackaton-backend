@@ -21,10 +21,16 @@
   line-height: 17px;
   font-weight: 500;
   white-space: nowrap;
-  color: var(--color-ink);
+  color: #fff;
   background: var(--color-coral);
 }
-.status-chip--off {
+/* Confirmado / listo. */
+.status-chip--teal {
+  background: var(--color-teal);
+}
+/* Cerrado o inactivo. */
+.status-chip--gris {
+  color: var(--color-ink);
   background: var(--color-surface);
 }
 
@@ -68,4 +74,97 @@
 .field-bar small {
   color: var(--color-muted);
   font-size: 12px;
+}
+
+/* Respuesta al tocar en todo lo pulsable (feedback al presionar, no al soltar). */
+.icon-button,
+.field-bar,
+.chip {
+  transition: transform 140ms var(--ease-out), background-color 140ms ease;
+}
+.icon-button:active,
+.field-bar:active,
+.chip:active {
+  transform: scale(0.96);
+}
+
+/* Chips de opción (hora rápida, asientos). */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.chip[aria-pressed='true'] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+}
+.chip--square {
+  width: 44px;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+  border-radius: 12px;
+  font-size: 15px;
+}
+
+/* Aviso de "qué sigue" en los detalles. */
+.next-step {
+  margin-top: 20px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  border-radius: 16px;
+  background: var(--color-surface);
+  font-size: 14px;
+  line-height: 20px;
+}
+.next-step > svg {
+  flex: none;
+  margin-top: 1px;
+}
+.next-step b {
+  display: block;
+  font-weight: 600;
+}
+.next-step p {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-muted);
+}
+.next-step--coral {
+  background: var(--color-coral-soft);
+}
+.next-step--coral > svg {
+  color: var(--color-coral);
+}
+.next-step--teal {
+  background: var(--color-teal-soft);
+}
+.next-step--teal > svg {
+  color: var(--color-teal);
+}
+.next-step button {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
 }

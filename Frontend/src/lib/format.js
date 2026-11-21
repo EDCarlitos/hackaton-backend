@@ -53,8 +53,22 @@ export const ESTADO_RESERVA = {
   expirada: 'Expirada',
 }
 
-/** Tono del chip de estado: los activos van en coral, los cerrados en gris. */
+/** Estados vigentes (el viaje o la reserva siguen en marcha). */
 export const esEstadoActivo = (estado) => ['abierto', 'lleno', 'en_curso', 'solicitada', 'confirmada'].includes(estado)
+
+// coral: en marcha o pendiente · teal: confirmado / listo · gris: cerrado.
+const TONOS = {
+  abierto: 'coral',
+  lleno: 'coral',
+  en_curso: 'coral',
+  solicitada: 'coral',
+  confirmada: 'teal',
+  completada: 'teal',
+  finalizado: 'teal',
+}
+
+/** Tono del chip de estado (ver StatusChip). */
+export const tonoEstado = (estado) => TONOS[estado] || 'gris'
 
 /** Valor para <input type="datetime-local"> en hora local. */
 export function aInputFechaHora(fecha) {

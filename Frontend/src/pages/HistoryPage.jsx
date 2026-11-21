@@ -6,7 +6,7 @@ import { StatusChip } from '../components/ui/StatusChip'
 import { PAGES } from '../constants/pages'
 import { useAsync } from '../hooks/useAsync'
 import { api } from '../lib/api'
-import { ESTADO_RESERVA, ESTADO_VIAJE, esEstadoActivo, formatDia, formatRangoHora } from '../lib/format'
+import { ESTADO_RESERVA, ESTADO_VIAJE, esEstadoActivo, formatDia, formatRangoHora, tonoEstado } from '../lib/format'
 
 // Viajes que conduzco y reservas que tengo, en una sola lista.
 async function cargarMisViajes() {
@@ -26,6 +26,7 @@ async function cargarMisViajes() {
       destino: v.destino,
       estado: ESTADO_VIAJE[v.estado],
       activo: esEstadoActivo(v.estado),
+      tono: tonoEstado(v.estado),
       pendientes: v.solicitudes_pendientes,
     })),
     ...reservas.map((r) => ({
@@ -39,6 +40,7 @@ async function cargarMisViajes() {
       destino: r.viaje.destino,
       estado: ESTADO_RESERVA[r.estado],
       activo: esEstadoActivo(r.estado),
+      tono: tonoEstado(r.estado),
       pendientes: 0,
     })),
   ]
@@ -98,11 +100,12 @@ function Lista({ items, onAbrir }) {
         <TripCard
           key={item.clave}
           historial
+          tono={item.tono}
           titulo={item.titulo}
           horario={`${formatDia(item.salida_en)} · ${formatRangoHora(item.salida_en, item.duracion_min)}`}
           origen={item.origen}
           destino={item.destino}
-          estado={<StatusChip activo={item.activo}>{item.estado}</StatusChip>}
+          estado={<StatusChip tono={item.tono}>{item.estado}</StatusChip>}
           onClick={() => onAbrir(item)}
           pie={
             <>

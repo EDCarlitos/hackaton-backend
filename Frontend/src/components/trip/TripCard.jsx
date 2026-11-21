@@ -5,8 +5,10 @@ import { Route } from './Route'
  * Tarjeta de viaje (borde izquierdo coral): "Conductores disponibles" e historial.
  * `estado` va arriba (chip, historial); `extra` a la derecha de la ruta; `pie` abajo.
  */
-export function TripCard({ titulo, horario, origen, destino, estado, extra, pie, onClick, apagada = false, historial = false }) {
-  const clases = ['trip-card', historial && 'trip-card--history', apagada && 'trip-card--off'].filter(Boolean).join(' ')
+export function TripCard({ titulo, horario, origen, destino, estado, extra, pie, onClick, tono = 'coral', historial = false }) {
+  // El borde izquierdo sigue el tono del estado: coral en marcha, teal confirmado, gris cerrado.
+  const borde = { teal: 'trip-card--teal', gris: 'trip-card--off' }[tono]
+  const clases = ['trip-card', historial && 'trip-card--history', borde].filter(Boolean).join(' ')
   return (
     <article
       className={clases}

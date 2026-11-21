@@ -86,9 +86,10 @@
   border: 0;
   border-radius: 12px;
   background: var(--color-coral);
+  color: #fff;
   display: grid;
   place-items: center;
-  transition: transform 0.16s ease-out;
+  transition: transform 140ms var(--ease-out);
 }
 .chat form button:active {
   transform: scale(0.94);

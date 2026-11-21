@@ -4,9 +4,17 @@
  * Tokens de diseño (ver Frontend/DESIGN.MD). Se usan como utilidades de Tailwind
  * (bg-coral, text-muted, border-line…) y como var(--color-*) en src/styles.
  * `static` hace que Tailwind emita todas las variables aunque solo se usen en CSS.
+ *
+ * Significado de los colores de acento:
+ *   coral (primario)   acción principal y lo que está en marcha o pendiente. Texto blanco encima.
+ *   teal (terciario)   confirmado / listo / impacto ambiental. Texto blanco encima.
+ *   gris (surface)     cerrado o inactivo.
  */
 @theme static {
   --color-coral: #f15156;
+  --color-teal: #3c787e;
+  --color-teal-soft: #e8f1f1;
+  --color-coral-soft: #fdeced;
   --color-ink: #191716;
   --color-muted: #696461;
   --color-surface: #f7f6f5;
@@ -14,6 +22,8 @@
   --color-backdrop: #f2f0ee;
   --font-display: Poppins, Inter, sans-serif;
   --font-body: Inter, sans-serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 :root { font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }

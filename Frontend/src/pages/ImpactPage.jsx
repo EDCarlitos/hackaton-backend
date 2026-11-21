@@ -24,7 +24,7 @@ export function ImpactPage({ navigate }) {
         title="Tu impacto"
         subtitle="Lo que ahorramos al compartir el auto"
         status={metodo?.etiqueta}
-        statusActivo={false}
+        statusTono="teal"
         onBack={() => navigate(PAGES.HOME)}
       />
 
@@ -49,7 +49,7 @@ export function ImpactPage({ navigate }) {
 
       {m && (
         <>
-          <section className="mt-5 rounded-[20px] bg-coral p-5 text-white">
+          <section className="mt-5 rounded-[20px] bg-teal p-5 text-white">
             <p className="flex items-center gap-2 text-sm font-medium">
               <Leaf size={18} /> CO₂ evitado <small className="font-normal">(estimación)</small>
             </p>
@@ -68,7 +68,7 @@ export function ImpactPage({ navigate }) {
       {metodo && (
         <section className="mt-6 grid grid-cols-1 gap-3 rounded-[20px] border border-line p-4 text-sm">
           <h2 className="flex items-center justify-between text-base font-semibold">
-            ¿Cómo se calcula? <StatusChip activo={false}>Estimación</StatusChip>
+            ¿Cómo se calcula? <StatusChip tono="gris">Estimación</StatusChip>
           </h2>
           <p className="rounded-xl bg-surface p-3 font-medium">{metodo.formula}</p>
           <div>
@@ -114,7 +114,7 @@ export function ImpactPage({ navigate }) {
 function Metrica({ icono, valor, etiqueta }) {
   return (
     <div className="rounded-2xl bg-surface p-3">
-      <span className="text-coral">{icono}</span>
+      <span className="text-teal">{icono}</span>
       <b className="mt-1 block text-xl">{valor}</b>
       <small className="text-[11px] leading-tight text-muted">{etiqueta}</small>
     </div>

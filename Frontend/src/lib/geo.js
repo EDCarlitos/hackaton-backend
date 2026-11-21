@@ -46,8 +46,8 @@ export const LUGARES = [
 export const COLORES_MAPA = {
   origen: '#191716',
   destino: '#f15156',
-  recogida: '#2563eb',
-  abordaje: '#16a34a',
+  recogida: '#a8a29e',
+  abordaje: '#3c787e',
   lugar: '#a8a29e',
 }
 
